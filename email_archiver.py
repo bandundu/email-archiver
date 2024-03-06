@@ -15,7 +15,7 @@ cursor = conn.cursor()
 # Create tables if they don't exist
 cursor.execute('''CREATE TABLE IF NOT EXISTS imap_accounts
                   (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                   username TEXT,
+                   email TEXT,
                    password TEXT,
                    imap_server TEXT,
                    imap_port INTEGER,
@@ -37,6 +37,12 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS attachments
                    filename TEXT,
                    content BLOB,
                    FOREIGN KEY (email_id) REFERENCES emails (id))''')
+
+# Domain-specific IMAP server configurations
+IMAP_CONFIGS = {
+    'mupende.com': ('imaps.udag.de', 993),
+    # Add more domain-specific configurations here
+}
 
 def fetch_and_archive_emails(account_id, imap_server, imap_port, username, password, mailbox):
     try:
@@ -115,11 +121,24 @@ def fetch_and_archive_emails(account_id, imap_server, imap_port, username, passw
     except Exception as e:
         logging.error(f"An error occurred for account {account_id}: {str(e)}")
 
-def create_imap_account(username, password, imap_server, imap_port, mailbox):
-    cursor.execute('''INSERT INTO imap_accounts (username, password, imap_server, imap_port, mailbox)
-                      VALUES (?, ?, ?, ?, ?)''', (username, password, imap_server, imap_port, mailbox))
-    conn.commit()
-    logging.info(f"IMAP account created for {username}.")
+def create_imap_account(email, password):
+    domain = email.split('@')[1]
+    if domain in IMAP_CONFIGS:
+        imap_server, imap_port = IMAP_CONFIGS[domain]
+        mailbox = 'INBOX'  # Customize the default mailbox if needed
+        try:
+            with imaplib.IMAP4_SSL(imap_server, imap_port) as imap:
+                imap.login(email, password)
+                cursor.execute('''INSERT INTO imap_accounts (email, password, imap_server, imap_port, mailbox)
+                                  VALUES (?, ?, ?, ?, ?)''', (email, password, imap_server, imap_port, mailbox))
+                conn.commit()
+                logging.info(f"IMAP account created for {email}.")
+        except imaplib.IMAP4.error as e:
+            logging.error(f"Failed to create IMAP account for {email}. Error: {str(e)}")
+            print(f"Failed to create IMAP account. Please provide the IMAP server and port manually.")
+    else:
+        print(f"Domain {domain} not found in the predefined configurations.")
+        print("Please provide the IMAP server and port manually.")
 
 def read_imap_accounts():
     cursor.execute("SELECT * FROM imap_accounts")
@@ -165,18 +184,15 @@ if __name__ == '__main__':
 
     # IMAP Account Management
     parser_create_account = subparsers.add_parser('create_account', help='Create a new IMAP account')
-    parser_create_account.add_argument('username', help='IMAP account username')
-    parser_create_account.add_argument('password', help='IMAP account password')
-    parser_create_account.add_argument('imap_server', help='IMAP server')
-    parser_create_account.add_argument('imap_port', type=int, help='IMAP port')
-    parser_create_account.add_argument('mailbox', help='Mailbox to archive')
+    parser_create_account.add_argument('email', help='Email address')
+    parser_create_account.add_argument('password', help='Email password')
 
     parser_list_accounts = subparsers.add_parser('list_accounts', help='List all IMAP accounts')
 
     parser_update_account = subparsers.add_parser('update_account', help='Update an IMAP account')
     parser_update_account.add_argument('account_id', type=int, help='IMAP account ID')
-    parser_update_account.add_argument('username', help='IMAP account username')
-    parser_update_account.add_argument('password', help='IMAP account password')
+    parser_update_account.add_argument('email', help='Email address')
+    parser_update_account.add_argument('password', help='Email password')
     parser_update_account.add_argument('imap_server', help='IMAP server')
     parser_update_account.add_argument('imap_port', type=int, help='IMAP port')
     parser_update_account.add_argument('mailbox', help='Mailbox to archive')
@@ -197,13 +213,13 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.command == 'create_account':
-        create_imap_account(args.username, args.password, args.imap_server, args.imap_port, args.mailbox)
+        create_imap_account(args.email, args.password)
     elif args.command == 'list_accounts':
         accounts = read_imap_accounts()
         for account in accounts:
             print(account)
     elif args.command == 'update_account':
-        update_imap_account(args.account_id, args.username, args.password, args.imap_server, args.imap_port, args.mailbox)
+        update_imap_account(args.account_id, args.email, args.password, args.imap_server, args.imap_port, args.mailbox)
     elif args.command == 'delete_account':
         delete_imap_account(args.account_id)
     elif args.command == 'search_emails':
