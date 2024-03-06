@@ -1,5 +1,6 @@
 import argparse
 import imaplib
+import poplib
 import email
 import sqlite3
 import time
@@ -13,12 +14,13 @@ conn = sqlite3.connect('email_archive.db')
 cursor = conn.cursor()
 
 # Create tables if they don't exist
-cursor.execute('''CREATE TABLE IF NOT EXISTS imap_accounts
+cursor.execute('''CREATE TABLE IF NOT EXISTS accounts
                   (id INTEGER PRIMARY KEY AUTOINCREMENT,
                    email TEXT,
                    password TEXT,
-                   imap_server TEXT,
-                   imap_port INTEGER,
+                   protocol TEXT,
+                   server TEXT,
+                   port INTEGER,
                    mailbox TEXT)''')
 
 cursor.execute('''CREATE TABLE IF NOT EXISTS emails
@@ -29,7 +31,7 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS emails
                    recipients TEXT,
                    date TEXT,
                    body TEXT,
-                   FOREIGN KEY (account_id) REFERENCES imap_accounts (id))''')
+                   FOREIGN KEY (account_id) REFERENCES accounts (id))''')
 
 cursor.execute('''CREATE TABLE IF NOT EXISTS attachments
                   (id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -38,29 +40,52 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS attachments
                    content BLOB,
                    FOREIGN KEY (email_id) REFERENCES emails (id))''')
 
-# Domain-specific IMAP server configurations
-IMAP_CONFIGS = {
-    'mupende.com': ('imaps.udag.de', 993),
+# Domain-specific IMAP and POP3 server configurations
+SERVER_CONFIGS = {
+    'mupende.com': {
+        'imap': ('imaps.udag.de', 993),
+        'pop3': ('pops.udag.de', 995)
+    },
+    'gmail.com': {
+        'imap': ('imap.gmail.com', 993),
+        'pop3': ('pop.gmail.com', 995)
+    },
     # Add more domain-specific configurations here
 }
 
-def fetch_and_archive_emails(account_id, imap_server, imap_port, username, password, mailbox):
+DEFAULT_PROTOCOL = 'pop3'  # Use POP3 as the default protocol
+
+def fetch_and_archive_emails(account_id, protocol, server, port, username, password, mailbox=None):
     try:
-        # Connect to the email server
-        imap = imaplib.IMAP4_SSL(imap_server, imap_port)
-        imap.login(username, password)
-        
-        # Select the mailbox to fetch emails from
-        imap.select(mailbox)
-        
-        # Fetch email UIDs
-        _, data = imap.uid('search', None, 'ALL')
-        email_uids = data[0].split()
+        if protocol == 'imap':
+            # Connect to the IMAP server
+            client = imaplib.IMAP4_SSL(server, port)
+            client.login(username, password)
+            
+            # Select the mailbox to fetch emails from
+            client.select(mailbox)
+            
+            # Fetch email UIDs
+            _, data = client.uid('search', None, 'ALL')
+            email_uids = data[0].split()
+        elif protocol == 'pop3':
+            # Connect to the POP3 server
+            client = poplib.POP3_SSL(server, port)
+            client.user(username)
+            client.pass_(password)
+            
+            # Get the number of emails
+            num_emails = len(client.list()[1])
+            email_uids = range(1, num_emails + 1)
         
         for uid in email_uids:
-            # Fetch the email content
-            _, data = imap.uid('fetch', uid, '(RFC822)')
-            raw_email = data[0][1]
+            if protocol == 'imap':
+                # Fetch the email content using IMAP
+                _, data = client.uid('fetch', uid, '(RFC822)')
+                raw_email = data[0][1]
+            elif protocol == 'pop3':
+                # Fetch the email content using POP3
+                raw_email = b'\n'.join(client.retr(uid)[1])
             
             # Parse the email content
             email_message = email.message_from_bytes(raw_email)
@@ -112,49 +137,65 @@ def fetch_and_archive_emails(account_id, imap_server, imap_port, username, passw
         # Commit the changes
         conn.commit()
         
-        # Close the IMAP connection
-        imap.close()
-        imap.logout()
+        # Close the connection
+        if protocol == 'imap':
+            client.close()
+            client.logout()
+        elif protocol == 'pop3':
+            client.quit()
         
         logging.info(f"Email archiving completed for account {account_id}.")
     
     except Exception as e:
         logging.error(f"An error occurred for account {account_id}: {str(e)}")
 
-def create_imap_account(email, password):
+def create_account(email, password, protocol=DEFAULT_PROTOCOL):
     domain = email.split('@')[1]
-    if domain in IMAP_CONFIGS:
-        imap_server, imap_port = IMAP_CONFIGS[domain]
-        mailbox = 'INBOX'  # Customize the default mailbox if needed
-        try:
-            with imaplib.IMAP4_SSL(imap_server, imap_port) as imap:
-                imap.login(email, password)
-                cursor.execute('''INSERT INTO imap_accounts (email, password, imap_server, imap_port, mailbox)
-                                  VALUES (?, ?, ?, ?, ?)''', (email, password, imap_server, imap_port, mailbox))
+    if domain in SERVER_CONFIGS:
+        server_config = SERVER_CONFIGS[domain]
+        if protocol in server_config:
+            server, port = server_config[protocol]
+            mailbox = 'INBOX' if protocol == 'imap' else None
+            try:
+                if protocol == 'imap':
+                    client = imaplib.IMAP4_SSL(server, port)
+                    client.login(email, password)
+                    client.logout()
+                elif protocol == 'pop3':
+                    client = poplib.POP3_SSL(server, port)
+                    client.user(email)
+                    client.pass_(password)
+                    client.quit()
+                
+                cursor.execute('''INSERT INTO accounts (email, password, protocol, server, port, mailbox)
+                                  VALUES (?, ?, ?, ?, ?, ?)''', (email, password, protocol, server, port, mailbox))
                 conn.commit()
-                logging.info(f"IMAP account created for {email}.")
-        except imaplib.IMAP4.error as e:
-            logging.error(f"Failed to create IMAP account for {email}. Error: {str(e)}")
-            print(f"Failed to create IMAP account. Please provide the IMAP server and port manually.")
+                logging.info(f"{protocol.upper()} account created for {email}.")
+            except (imaplib.IMAP4.error, poplib.error_proto) as e:
+                logging.error(f"Failed to create {protocol.upper()} account for {email}. Error: {str(e)}")
+                print(f"Failed to create {protocol.upper()} account. Please check the {protocol.upper()} server and port manually.")
+        else:
+            print(f"{protocol.upper()} configuration not found for the domain {domain}.")
     else:
         print(f"Domain {domain} not found in the predefined configurations.")
-        print("Please provide the IMAP server and port manually.")
+        print(f"Using the default {DEFAULT_PROTOCOL.upper()} protocol.")
+        create_account(email, password, DEFAULT_PROTOCOL)
 
-def read_imap_accounts():
-    cursor.execute("SELECT * FROM imap_accounts")
+def read_accounts():
+    cursor.execute("SELECT * FROM accounts")
     return cursor.fetchall()
 
-def update_imap_account(account_id, username, password, imap_server, imap_port, mailbox):
-    cursor.execute('''UPDATE imap_accounts
-                      SET username = ?, password = ?, imap_server = ?, imap_port = ?, mailbox = ?
-                      WHERE id = ?''', (username, password, imap_server, imap_port, mailbox, account_id))
+def update_account(account_id, email, password, protocol, server, port, mailbox):
+    cursor.execute('''UPDATE accounts
+                      SET email = ?, password = ?, protocol = ?, server = ?, port = ?, mailbox = ?
+                      WHERE id = ?''', (email, password, protocol, server, port, mailbox, account_id))
     conn.commit()
-    logging.info(f"IMAP account {account_id} updated.")
+    logging.info(f"Account {account_id} updated.")
 
-def delete_imap_account(account_id):
-    cursor.execute("DELETE FROM imap_accounts WHERE id = ?", (account_id,))
+def delete_account(account_id):
+    cursor.execute("DELETE FROM accounts WHERE id = ?", (account_id,))
     conn.commit()
-    logging.info(f"IMAP account {account_id} deleted.")
+    logging.info(f"Account {account_id} deleted.")
 
 def search_emails(query):
     cursor.execute("SELECT * FROM emails WHERE subject LIKE ? OR sender LIKE ? OR recipients LIKE ? OR body LIKE ?",
@@ -172,33 +213,35 @@ def get_email_details(email_id):
 
 def run_archiver():
     while True:
-        accounts = read_imap_accounts()
+        accounts = read_accounts()
         for account in accounts:
-            account_id, username, password, imap_server, imap_port, mailbox = account
-            fetch_and_archive_emails(account_id, imap_server, imap_port, username, password, mailbox)
+            account_id, email, password, protocol, server, port, mailbox = account
+            fetch_and_archive_emails(account_id, protocol, server, port, email, password, mailbox)
         time.sleep(300)  # Wait for 5 minutes before the next archiving cycle
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Email Archiver CLI')
     subparsers = parser.add_subparsers(dest='command', help='Available commands')
 
-    # IMAP Account Management
-    parser_create_account = subparsers.add_parser('create_account', help='Create a new IMAP account')
+    # IMAP/POP3 Account Management
+    parser_create_account = subparsers.add_parser('create_account', help='Create a new IMAP/POP3 account')
     parser_create_account.add_argument('email', help='Email address')
     parser_create_account.add_argument('password', help='Email password')
+    parser_create_account.add_argument('--protocol', choices=['imap', 'pop3'], help='Email protocol (imap or pop3)', default=DEFAULT_PROTOCOL)
 
-    parser_list_accounts = subparsers.add_parser('list_accounts', help='List all IMAP accounts')
+    parser_list_accounts = subparsers.add_parser('list_accounts', help='List all IMAP/POP3 accounts')
 
-    parser_update_account = subparsers.add_parser('update_account', help='Update an IMAP account')
-    parser_update_account.add_argument('account_id', type=int, help='IMAP account ID')
+    parser_update_account = subparsers.add_parser('update_account', help='Update an IMAP/POP3 account')
+    parser_update_account.add_argument('account_id', type=int, help='Account ID')
     parser_update_account.add_argument('email', help='Email address')
     parser_update_account.add_argument('password', help='Email password')
-    parser_update_account.add_argument('imap_server', help='IMAP server')
-    parser_update_account.add_argument('imap_port', type=int, help='IMAP port')
-    parser_update_account.add_argument('mailbox', help='Mailbox to archive')
+    parser_update_account.add_argument('protocol', choices=['imap', 'pop3'], help='Email protocol (imap or pop3)')
+    parser_update_account.add_argument('server', help='Email server')
+    parser_update_account.add_argument('port', type=int, help='Email server port')
+    parser_update_account.add_argument('mailbox', help='Mailbox to archive (IMAP only)')
 
-    parser_delete_account = subparsers.add_parser('delete_account', help='Delete an IMAP account')
-    parser_delete_account.add_argument('account_id', type=int, help='IMAP account ID')
+    parser_delete_account = subparsers.add_parser('delete_account', help='Delete an IMAP/POP3 account')
+    parser_delete_account.add_argument('account_id', type=int, help='Account ID')
 
     # Email Archive
     parser_search_emails = subparsers.add_parser('search_emails', help='Search for emails')
@@ -213,15 +256,15 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.command == 'create_account':
-        create_imap_account(args.email, args.password)
+        create_account(args.email, args.password, args.protocol)
     elif args.command == 'list_accounts':
-        accounts = read_imap_accounts()
+        accounts = read_accounts()
         for account in accounts:
             print(account)
     elif args.command == 'update_account':
-        update_imap_account(args.account_id, args.email, args.password, args.imap_server, args.imap_port, args.mailbox)
+        update_account(args.account_id, args.email, args.password, args.protocol, args.server, args.port, args.mailbox)
     elif args.command == 'delete_account':
-        delete_imap_account(args.account_id)
+        delete_account(args.account_id)
     elif args.command == 'search_emails':
         emails = search_emails(args.query)
         for email in emails:
