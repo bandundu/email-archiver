@@ -31,6 +31,7 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS emails
                    recipients TEXT,
                    date TEXT,
                    body TEXT,
+                   unique_id TEXT,
                    FOREIGN KEY (account_id) REFERENCES accounts (id))''')
 
 cursor.execute('''CREATE TABLE IF NOT EXISTS attachments
@@ -40,9 +41,19 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS attachments
                    content BLOB,
                    FOREIGN KEY (email_id) REFERENCES emails (id))''')
 
+cursor.execute('''CREATE TABLE IF NOT EXISTS email_uids
+                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                   account_id INTEGER,
+                   uid TEXT,
+                   FOREIGN KEY (account_id) REFERENCES accounts (id))''')
+
 # Domain-specific IMAP and POP3 server configurations
 SERVER_CONFIGS = {
     'mupende.com': {
+        'imap': ('imaps.udag.de', 993),
+        'pop3': ('pops.udag.de', 995)
+    },
+    'datacook.de': {
         'imap': ('imaps.udag.de', 993),
         'pop3': ('pops.udag.de', 995)
     },
@@ -95,6 +106,19 @@ def fetch_and_archive_emails(account_id, protocol, server, port, username, passw
             sender = email_message['From']
             recipients = email_message['To']
             date = email_message['Date']
+            message_id = email_message['Message-ID']
+            
+            # Create a unique identifier for the email
+            if protocol == 'imap':
+                unique_id = str(uid)
+            elif protocol == 'pop3':
+                unique_id = f"{message_id}_{date}_{sender}_{subject}"
+            
+            # Check if the email already exists in the database
+            cursor.execute("SELECT id FROM emails WHERE unique_id = ?", (unique_id,))
+            existing_email = cursor.fetchone()
+            if existing_email:
+                continue  # Skip archiving if the email already exists
             
             # Extract email body
             body = ''
@@ -117,8 +141,8 @@ def fetch_and_archive_emails(account_id, protocol, server, port, username, passw
                     body = payload.decode(errors='replace')
             
             # Insert email metadata into the database
-            cursor.execute('''INSERT INTO emails (account_id, subject, sender, recipients, date, body)
-                              VALUES (?, ?, ?, ?, ?, ?)''', (account_id, subject, sender, recipients, date, body))
+            cursor.execute('''INSERT INTO emails (account_id, subject, sender, recipients, date, body, unique_id)
+                              VALUES (?, ?, ?, ?, ?, ?, ?)''', (account_id, subject, sender, recipients, date, body, unique_id))
             email_id = cursor.lastrowid
             
             # Save attachments
