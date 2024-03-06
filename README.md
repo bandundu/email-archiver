@@ -72,7 +72,7 @@ Contributions are welcome! If you have any ideas, suggestions, or bug reports, p
 
 ## Contact
 
-For any questions or feature requests, please contact Charles David at charlesdavid@mupende.com.
+For any questions or feature requests, please contact me at charlesdavid@mupende.com.
 
 ## License
 
