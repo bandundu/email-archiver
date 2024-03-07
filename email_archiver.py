@@ -10,44 +10,6 @@ import logging
 logging.basicConfig(level=logging.INFO, filename='email_archiver.log', filemode='a',
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Database connection
-conn = sqlite3.connect('email_archive.db')
-cursor = conn.cursor()
-
-# Create tables if they don't exist
-cursor.execute('''CREATE TABLE IF NOT EXISTS accounts
-                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                   email TEXT,
-                   password TEXT,
-                   protocol TEXT,
-                   server TEXT,
-                   port INTEGER,
-                   mailbox TEXT)''')
-
-cursor.execute('''CREATE TABLE IF NOT EXISTS emails
-                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                   account_id INTEGER,
-                   subject TEXT,
-                   sender TEXT,
-                   recipients TEXT,
-                   date TEXT,
-                   body TEXT,
-                   unique_id TEXT,
-                   FOREIGN KEY (account_id) REFERENCES accounts (id))''')
-
-cursor.execute('''CREATE TABLE IF NOT EXISTS attachments
-                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                   email_id INTEGER,
-                   filename TEXT,
-                   content BLOB,
-                   FOREIGN KEY (email_id) REFERENCES emails (id))''')
-
-cursor.execute('''CREATE TABLE IF NOT EXISTS email_uids
-                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                   account_id INTEGER,
-                   uid TEXT,
-                   FOREIGN KEY (account_id) REFERENCES accounts (id))''')
-
 # Domain-specific IMAP and POP3 server configurations
 SERVER_CONFIGS = {
     'mupende.com': {
@@ -67,7 +29,7 @@ SERVER_CONFIGS = {
 
 DEFAULT_PROTOCOL = 'pop3'  # Use POP3 as the default protocol
 
-def fetch_and_archive_emails(account_id, protocol, server, port, username, password, mailbox=None):
+def fetch_and_archive_emails(conn, account_id, protocol, server, port, username, password, mailbox=None):
     try:
         logging.info(f"Started email archiving for account {account_id}.")
         if protocol == 'imap':
@@ -92,6 +54,8 @@ def fetch_and_archive_emails(account_id, protocol, server, port, username, passw
             email_uids = range(1, num_emails + 1)
         
         logging.info(f"Found {len(email_uids)} emails for account {account_id}.")
+        
+        cursor = conn.cursor()
         
         for uid in email_uids:
             logging.debug(f"Processing email with UID {uid} for account {account_id}.")
@@ -169,7 +133,6 @@ def fetch_and_archive_emails(account_id, protocol, server, port, username, passw
                     
                     logging.info(f"Saved attachment {filename} for email with UID {uid} for account {account_id}.")
         
-        # Commit the changes
         conn.commit()
         
         # Close the connection
@@ -184,7 +147,7 @@ def fetch_and_archive_emails(account_id, protocol, server, port, username, passw
     except Exception as e:
         logging.error(f"An error occurred during email archiving for account {account_id}: {str(e)}")
 
-def create_account(email, password, protocol=DEFAULT_PROTOCOL):
+def create_account(conn, email, password, protocol=DEFAULT_PROTOCOL):
     logging.info(f"Creating {protocol.upper()} account for {email}.")
     domain = email.split('@')[1]
     if domain in SERVER_CONFIGS:
@@ -203,6 +166,7 @@ def create_account(email, password, protocol=DEFAULT_PROTOCOL):
                     client.pass_(password)
                     client.quit()
                 
+                cursor = conn.cursor()
                 cursor.execute('''INSERT INTO accounts (email, password, protocol, server, port, mailbox)
                                   VALUES (?, ?, ?, ?, ?, ?)''', (email, password, protocol, server, port, mailbox))
                 conn.commit()
@@ -218,44 +182,66 @@ def create_account(email, password, protocol=DEFAULT_PROTOCOL):
         logging.error(f"Domain {domain} not found in the predefined configurations.")
         print(f"Using the default {DEFAULT_PROTOCOL.upper()} protocol.")
         logging.info(f"Using the default {DEFAULT_PROTOCOL.upper()} protocol.")
-        create_account(email, password, DEFAULT_PROTOCOL)
+        create_account(conn, email, password, DEFAULT_PROTOCOL)
 
-def read_accounts():
+def read_accounts(conn):
     logging.info("Fetching all IMAP/POP3 accounts from the database.")
+    cursor = conn.cursor()
     cursor.execute("SELECT * FROM accounts")
     accounts = cursor.fetchall()
     logging.info(f"Retrieved {len(accounts)} IMAP/POP3 accounts from the database.")
     return accounts
 
-def update_account(account_id, email, password, protocol, server, port, mailbox):
+def get_account(conn, account_id):
+    logging.info(f"Fetching account details for account ID {account_id}.")
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM accounts WHERE id = ?", (account_id,))
+    account = cursor.fetchone()
+    if account:
+        logging.info(f"Account details fetched successfully for account ID {account_id}.")
+        return account
+    else:
+        logging.warning(f"Account with ID {account_id} not found.")
+        return None
+
+def update_account(conn, account_id, email, password, protocol, server, port, mailbox):
     logging.info(f"Updating account {account_id} with email {email}.")
+    cursor = conn.cursor()
     cursor.execute('''UPDATE accounts
                       SET email = ?, password = ?, protocol = ?, server = ?, port = ?, mailbox = ?
                       WHERE id = ?''', (email, password, protocol, server, port, mailbox, account_id))
     conn.commit()
     logging.info(f"Account {account_id} updated successfully.")
 
-def delete_account(account_id):
+def delete_account(conn, account_id):
     logging.info(f"Deleting account {account_id}.")
+    cursor = conn.cursor()
     cursor.execute("DELETE FROM accounts WHERE id = ?", (account_id,))
     conn.commit()
     logging.info(f"Account {account_id} deleted successfully.")
 
-def search_emails(query):
+def search_emails(conn, query):
     logging.info(f"Searching for emails with query: {query}")
+    cursor = conn.cursor()
     cursor.execute("SELECT * FROM emails WHERE subject LIKE ? OR sender LIKE ? OR recipients LIKE ? OR body LIKE ?",
                    (f"%{query}%", f"%{query}%", f"%{query}%", f"%{query}%"))
     emails = cursor.fetchall()
     logging.info(f"Found {len(emails)} emails matching the search query.")
     return emails
 
-def get_email_details(email_id):
+def get_email_details(conn, email_id):
     logging.info(f"Fetching email details for email ID {email_id}.")
-    cursor.execute("SELECT * FROM emails WHERE id = ?", (email_id,))
+    cursor = conn.cursor()
+    cursor.execute("SELECT *, (SELECT GROUP_CONCAT(filename) FROM attachments WHERE email_id = emails.id) AS attachments FROM emails WHERE id = ?", (email_id,))
     email = cursor.fetchone()
     if email:
-        cursor.execute("SELECT * FROM attachments WHERE email_id = ?", (email_id,))
-        attachments = cursor.fetchall()
+        content_type = 'text/plain'
+        logging.info(f"Email with ID {email_id} is a plain text email.")
+        if email[6].strip().startswith('<!DOCTYPE html>') or email[6].strip().startswith('<html') or email[6].strip().startswith('<?xml'):
+            content_type = 'text/html'
+            logging.info(f"Email with ID {email_id} is an HTML email.")
+        email = email[:6] + (email[6], content_type) + (email[-1],)
+        attachments = email[-1].split(',') if email[-1] else []
         logging.info(f"Email details and attachments fetched successfully for email ID {email_id}.")
         return email, attachments
     else:
@@ -265,10 +251,12 @@ def get_email_details(email_id):
 def run_archiver():
     while True:
         logging.info("Starting email archiving cycle...")
-        accounts = read_accounts()
+        conn = sqlite3.connect('email_archive.db')
+        accounts = read_accounts(conn)
         for account in accounts:
             account_id, email, password, protocol, server, port, mailbox = account
-            fetch_and_archive_emails(account_id, protocol, server, port, email, password, mailbox)
+            fetch_and_archive_emails(conn, account_id, protocol, server, port, email, password, mailbox)
+        conn.close()
         logging.info("Email archiving cycle completed.")
         time.sleep(300)  # Wait for 5 minutes before the next archiving cycle
 

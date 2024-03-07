@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Account{% endblock %}
+
+{% block content %}
+<h2>Delete Account</h2>
+<p>Are you sure you want to delete the account "<strong>{{ account[1] }}</strong>"?</p>
+<form method="POST" action="{{ url_for('delete_account', account_id=account[0]) }}">
+    <button type="submit" class="btn btn-danger">Delete</button>
+    <a href="{{ url_for('list_accounts') }}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

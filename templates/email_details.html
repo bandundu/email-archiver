@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}Email Details{% endblock %}
+
+{% block content %}
+<h2>Email Details</h2>
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">Subject: {{ email[2] }}</h5>
+        <p class="card-text"><strong>Sender:</strong> {{ email[3] }}</p>
+        <p class="card-text"><strong>Recipients:</strong> {{ email[4] }}</p>
+        <p class="card-text"><strong>Date:</strong> {{ email[5] }}</p>
+        <p class="card-text"><strong>Body:</strong></p>
+        {% if email[7] == 'text/plain' %}
+        <pre>{{ email[6] }}</pre>
+        {% elif email[7] == 'text/html' %}
+        {{ email[6]|safe }}
+        {% endif %}
+    </div>
+</div>
+{% if attachments %}
+<h3 class="mt-4">Attachments</h3>
+<ul>
+    {% for attachment in attachments %}
+    <li>{{ attachment }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+{% endblock %}
