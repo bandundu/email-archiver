@@ -3,6 +3,37 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
-<h1>Welcome to Briefbox</h1>
-<p>Manage your email accounts and search archived emails.</p>
+    <h1>Welcome to Briefbox</h1>
+    <p>Manage your email accounts and search archived emails.</p>
+    <h2>Summary Statistics</h2>
+    <ul>
+        <li>Total Emails: {{ total_emails }}</li>
+        <li>Total Accounts: {{ total_accounts }}</li>
+        <li>Total Attachments: {{ total_attachments }}</li>
+    </ul>
+    <h2>Latest Archived Emails</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Subject</th>
+                <th>Sender</th>
+                <th>Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for email in latest_emails %}
+            <tr>
+                <td>{{ email[0] }}</td>
+                <td><a href="{{ url_for('email_details', email_id=email[0]) }}">{{ email[2] }}</a></td>
+                <td>{{ email[3] }}</td>
+                <td>{{ email[5]|format_date }}</td>
+                <td>
+                    <a href="{{ url_for('email_details', email_id=email[0]) }}" class="btn btn-sm btn-primary">Details</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 {% endblock %}

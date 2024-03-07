@@ -9,8 +9,7 @@
         <h5 class="card-title">Subject: {{ email[2] }}</h5>
         <p class="card-text"><strong>Sender:</strong> {{ email[3] }}</p>
         <p class="card-text"><strong>Recipients:</strong> {{ email[4] }}</p>
-        <p class="card-text"><strong>Date:</strong> {{ email[5] }}</p>
-        <p class="card-text"><strong>Body:</strong></p>
+        <p class="card-text"><strong>Date:</strong> {{ email[5]|format_date }}</p>
         {% if email[7] == 'text/plain' %}
         <pre>{{ email[6] }}</pre>
         {% elif email[7] == 'text/html' %}

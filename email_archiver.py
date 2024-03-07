@@ -5,6 +5,7 @@ import email
 import sqlite3
 import time
 import logging
+import re
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, filename='email_archiver.log', filemode='a',
@@ -275,13 +276,23 @@ def get_email_details(conn, email_id):
     cursor = conn.cursor()
     cursor.execute("SELECT *, (SELECT GROUP_CONCAT(filename) FROM attachments WHERE email_id = emails.id) AS attachments FROM emails WHERE id = ?", (email_id,))
     email = cursor.fetchone()
+    html_tags = re.compile(r'<(?!!)(?P<tag>[a-zA-Z]+).*?>', re.IGNORECASE)
+
     if email:
         content_type = 'text/plain'
         logging.info(f"Email with ID {email_id} is a plain text email.")
-        if email[6].strip().startswith('<!DOCTYPE html>') or email[6].strip().startswith('<html') or email[6].strip().startswith('<?xml'):
+        if '<!doctype html>' in email[6].lower() or '<html' in email[6].lower() or html_tags.search(email[6]) is not None:
             content_type = 'text/html'
             logging.info(f"Email with ID {email_id} is an HTML email.")
-        email = email[:6] + (email[6], content_type) + (email[-1],)
+            # Extract the HTML portion of the email
+            html_start = email[6].lower().find('<!doctype html>') if '<!doctype html>' in email[6].lower() else email[6].lower().find('<html')
+            html_end = email[6].lower().rfind('</html>') + len('</html>')
+            if html_start != -1 and html_end != -1:
+                email = email[:6] + (email[6][html_start:html_end], content_type) + (email[-1],)
+            else:
+                email = email[:6] + (email[6], content_type) + (email[-1],)
+        else:
+            email = email[:6] + (email[6], content_type) + (email[-1],)
         attachments = email[-1].split(',') if email[-1] else []
         logging.info(f"Email details and attachments fetched successfully for email ID {email_id}.")
         return email, attachments

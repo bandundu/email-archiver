@@ -29,7 +29,7 @@
             <td>{{ email[0] }}</td>
             <td>{{ email[2] }}</td>
             <td>{{ email[3] }}</td>
-            <td>{{ email[5] }}</td>
+            <td>{{ email[5]|format_date }}</td>
             <td>
                 <a href="{{ url_for('email_details', email_id=email[0]) }}" class="btn btn-sm btn-primary">Details</a>
             </td>

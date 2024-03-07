@@ -1,12 +1,43 @@
 from flask import Flask, render_template, request, redirect, url_for
 import email_archiver
 import sqlite3
+from dateutil import parser
 
 app = Flask(__name__)
 
+
+@app.template_filter('format_date')
+def format_date(date_str):
+    # Use dateutil.parser to handle various date formats with or without timezone information
+    date_obj = parser.parse(date_str)
+    # Format the date as desired (e.g., without timezone information)
+    return date_obj.strftime('%a, %d %b %Y %H:%M:%S')
+
+app.jinja_env.filters['format_date'] = format_date
+
 @app.route('/')
 def index():
-    return render_template('index.html')
+    conn = sqlite3.connect('email_archive.db')
+    cursor = conn.cursor()
+
+    # Fetch the latest archived emails
+    cursor.execute("SELECT * FROM emails ORDER BY date DESC LIMIT 5")
+    latest_emails = cursor.fetchall()
+
+    # Fetch summary statistics
+    cursor.execute("SELECT COUNT(*) FROM emails")
+    total_emails = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM accounts")
+    total_accounts = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM attachments")
+    total_attachments = cursor.fetchone()[0]
+
+    conn.close()
+
+    return render_template('index.html', latest_emails=latest_emails, total_emails=total_emails,
+                           total_accounts=total_accounts, total_attachments=total_attachments)
 
 @app.route('/create_account', methods=['GET', 'POST'])
 def create_account():
