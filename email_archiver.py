@@ -7,7 +7,8 @@ import time
 import logging
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, filename='email_archiver.log', filemode='a',
+                    format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Database connection
 conn = sqlite3.connect('email_archive.db')
@@ -68,6 +69,7 @@ DEFAULT_PROTOCOL = 'pop3'  # Use POP3 as the default protocol
 
 def fetch_and_archive_emails(account_id, protocol, server, port, username, password, mailbox=None):
     try:
+        logging.info(f"Started email archiving for account {account_id}.")
         if protocol == 'imap':
             # Connect to the IMAP server
             client = imaplib.IMAP4_SSL(server, port)
@@ -89,7 +91,11 @@ def fetch_and_archive_emails(account_id, protocol, server, port, username, passw
             num_emails = len(client.list()[1])
             email_uids = range(1, num_emails + 1)
         
+        logging.info(f"Found {len(email_uids)} emails for account {account_id}.")
+        
         for uid in email_uids:
+            logging.debug(f"Processing email with UID {uid} for account {account_id}.")
+            
             if protocol == 'imap':
                 # Fetch the email content using IMAP
                 _, data = client.uid('fetch', uid, '(RFC822)')
@@ -118,6 +124,7 @@ def fetch_and_archive_emails(account_id, protocol, server, port, username, passw
             cursor.execute("SELECT id FROM emails WHERE unique_id = ?", (unique_id,))
             existing_email = cursor.fetchone()
             if existing_email:
+                logging.debug(f"Skipping email with UID {uid} for account {account_id} as it already exists.")
                 continue  # Skip archiving if the email already exists
             
             # Extract email body
@@ -145,6 +152,8 @@ def fetch_and_archive_emails(account_id, protocol, server, port, username, passw
                               VALUES (?, ?, ?, ?, ?, ?, ?)''', (account_id, subject, sender, recipients, date, body, unique_id))
             email_id = cursor.lastrowid
             
+            logging.info(f"Inserted email with UID {uid} for account {account_id} into the database.")
+            
             # Save attachments
             for part in email_message.walk():
                 if part.get_content_maintype() == 'multipart':
@@ -157,6 +166,8 @@ def fetch_and_archive_emails(account_id, protocol, server, port, username, passw
                     content = part.get_payload(decode=True)
                     cursor.execute('''INSERT INTO attachments (email_id, filename, content)
                                       VALUES (?, ?, ?)''', (email_id, filename, content))
+                    
+                    logging.info(f"Saved attachment {filename} for email with UID {uid} for account {account_id}.")
         
         # Commit the changes
         conn.commit()
@@ -168,12 +179,13 @@ def fetch_and_archive_emails(account_id, protocol, server, port, username, passw
         elif protocol == 'pop3':
             client.quit()
         
-        logging.info(f"Email archiving completed for account {account_id}.")
+        logging.info(f"Email archiving completed successfully for account {account_id}.")
     
     except Exception as e:
-        logging.error(f"An error occurred for account {account_id}: {str(e)}")
+        logging.error(f"An error occurred during email archiving for account {account_id}: {str(e)}")
 
 def create_account(email, password, protocol=DEFAULT_PROTOCOL):
+    logging.info(f"Creating {protocol.upper()} account for {email}.")
     domain = email.split('@')[1]
     if domain in SERVER_CONFIGS:
         server_config = SERVER_CONFIGS[domain]
@@ -194,53 +206,70 @@ def create_account(email, password, protocol=DEFAULT_PROTOCOL):
                 cursor.execute('''INSERT INTO accounts (email, password, protocol, server, port, mailbox)
                                   VALUES (?, ?, ?, ?, ?, ?)''', (email, password, protocol, server, port, mailbox))
                 conn.commit()
-                logging.info(f"{protocol.upper()} account created for {email}.")
+                logging.info(f"{protocol.upper()} account created successfully for {email}.")
             except (imaplib.IMAP4.error, poplib.error_proto) as e:
                 logging.error(f"Failed to create {protocol.upper()} account for {email}. Error: {str(e)}")
                 print(f"Failed to create {protocol.upper()} account. Please check the {protocol.upper()} server and port manually.")
         else:
             print(f"{protocol.upper()} configuration not found for the domain {domain}.")
+            logging.error(f"{protocol.upper()} configuration not found for the domain {domain}.")
     else:
         print(f"Domain {domain} not found in the predefined configurations.")
+        logging.error(f"Domain {domain} not found in the predefined configurations.")
         print(f"Using the default {DEFAULT_PROTOCOL.upper()} protocol.")
+        logging.info(f"Using the default {DEFAULT_PROTOCOL.upper()} protocol.")
         create_account(email, password, DEFAULT_PROTOCOL)
 
 def read_accounts():
+    logging.info("Fetching all IMAP/POP3 accounts from the database.")
     cursor.execute("SELECT * FROM accounts")
-    return cursor.fetchall()
+    accounts = cursor.fetchall()
+    logging.info(f"Retrieved {len(accounts)} IMAP/POP3 accounts from the database.")
+    return accounts
 
 def update_account(account_id, email, password, protocol, server, port, mailbox):
+    logging.info(f"Updating account {account_id} with email {email}.")
     cursor.execute('''UPDATE accounts
                       SET email = ?, password = ?, protocol = ?, server = ?, port = ?, mailbox = ?
                       WHERE id = ?''', (email, password, protocol, server, port, mailbox, account_id))
     conn.commit()
-    logging.info(f"Account {account_id} updated.")
+    logging.info(f"Account {account_id} updated successfully.")
 
 def delete_account(account_id):
+    logging.info(f"Deleting account {account_id}.")
     cursor.execute("DELETE FROM accounts WHERE id = ?", (account_id,))
     conn.commit()
-    logging.info(f"Account {account_id} deleted.")
+    logging.info(f"Account {account_id} deleted successfully.")
 
 def search_emails(query):
+    logging.info(f"Searching for emails with query: {query}")
     cursor.execute("SELECT * FROM emails WHERE subject LIKE ? OR sender LIKE ? OR recipients LIKE ? OR body LIKE ?",
                    (f"%{query}%", f"%{query}%", f"%{query}%", f"%{query}%"))
-    return cursor.fetchall()
+    emails = cursor.fetchall()
+    logging.info(f"Found {len(emails)} emails matching the search query.")
+    return emails
 
 def get_email_details(email_id):
+    logging.info(f"Fetching email details for email ID {email_id}.")
     cursor.execute("SELECT * FROM emails WHERE id = ?", (email_id,))
     email = cursor.fetchone()
     if email:
         cursor.execute("SELECT * FROM attachments WHERE email_id = ?", (email_id,))
         attachments = cursor.fetchall()
+        logging.info(f"Email details and attachments fetched successfully for email ID {email_id}.")
         return email, attachments
-    return None, None
+    else:
+        logging.warning(f"Email with ID {email_id} not found.")
+        return None, None
 
 def run_archiver():
     while True:
+        logging.info("Starting email archiving cycle...")
         accounts = read_accounts()
         for account in accounts:
             account_id, email, password, protocol, server, port, mailbox = account
             fetch_and_archive_emails(account_id, protocol, server, port, email, password, mailbox)
+        logging.info("Email archiving cycle completed.")
         time.sleep(300)  # Wait for 5 minutes before the next archiving cycle
 
 if __name__ == '__main__':
@@ -279,6 +308,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    logging.info(f"Executing command: {args.command}")
+
     if args.command == 'create_account':
         create_account(args.email, args.password, args.protocol)
     elif args.command == 'list_accounts':
@@ -304,3 +335,5 @@ if __name__ == '__main__':
             print(f"Email with ID {args.email_id} not found.")
     elif args.command == 'run_archiver':
         run_archiver()
+
+    logging.info(f"Command {args.command} executed successfully.")
