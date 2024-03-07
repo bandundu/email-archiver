@@ -15,9 +15,14 @@ def create_account():
         password = request.form['password']
         protocol = request.form['protocol']
         conn = sqlite3.connect('email_archive.db')
-        email_archiver.create_account(conn, email, password, protocol)
-        conn.close()
-        return redirect(url_for('list_accounts'))
+        try:
+            email_archiver.create_account(conn, email, password, protocol)
+            conn.close()
+            return redirect(url_for('list_accounts'))
+        except sqlite3.IntegrityError:
+            conn.close()
+            error_message = f"An account with email '{email}' already exists. Please use a different email."
+            return render_template('create_account.html', error_message=error_message)
     return render_template('create_account.html')
 
 @app.route('/list_accounts')

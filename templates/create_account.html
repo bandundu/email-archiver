@@ -3,23 +3,26 @@
 {% block title %}Create Account{% endblock %}
 
 {% block content %}
-<h2>Create Account</h2>
-<form method="POST" action="{{ url_for('create_account') }}">
-    <div class="mb-3">
-        <label for="email" class="form-label">Email:</label>
-        <input type="email" id="email" name="email" class="form-control" required>
-    </div>
-    <div class="mb-3">
-        <label for="password" class="form-label">Password:</label>
-        <input type="password" id="password" name="password" class="form-control" required>
-    </div>
-    <div class="mb-3">
-        <label for="protocol" class="form-label">Protocol:</label>
-        <select id="protocol" name="protocol" class="form-select">
-            <option value="imap">IMAP</option>
-            <option value="pop3">POP3</option>
-        </select>
-    </div>
-    <button type="submit" class="btn btn-primary">Create</button>
-</form>
+    <h2>Create Account</h2>
+    {% if error_message %}
+    <div class="alert alert-danger">{{ error_message }}</div>
+    {% endif %}
+    <form method="POST" action="{{ url_for('create_account') }}">
+        <div class="mb-3">
+            <label for="email" class="form-label">Email:</label>
+            <input type="email" id="email" name="email" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label for="password" class="form-label">Password:</label>
+            <input type="password" id="password" name="password" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label for="protocol" class="form-label">Protocol:</label>
+            <select id="protocol" name="protocol" class="form-select">
+                <option value="pop3">POP3</option>
+                <option value="imap">IMAP</option>
+            </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Create</button>
+            </form>
 {% endblock %}

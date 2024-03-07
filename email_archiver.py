@@ -10,6 +10,44 @@ import logging
 logging.basicConfig(level=logging.INFO, filename='email_archiver.log', filemode='a',
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
+# Database connection
+conn = sqlite3.connect('email_archive.db')
+cursor = conn.cursor()
+
+# Create tables if they don't exist
+cursor.execute('''CREATE TABLE IF NOT EXISTS accounts
+                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                   email TEXT UNIQUE,
+                   password TEXT,
+                   protocol TEXT,
+                   server TEXT,
+                   port INTEGER,
+                   mailbox TEXT)''')
+
+cursor.execute('''CREATE TABLE IF NOT EXISTS emails
+                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                   account_id INTEGER,
+                   subject TEXT,
+                   sender TEXT,
+                   recipients TEXT,
+                   date TEXT,
+                   body TEXT,
+                   unique_id TEXT UNIQUE,
+                   FOREIGN KEY (account_id) REFERENCES accounts (id))''')
+
+cursor.execute('''CREATE TABLE IF NOT EXISTS attachments
+                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                   email_id INTEGER,
+                   filename TEXT,
+                   content BLOB,
+                   FOREIGN KEY (email_id) REFERENCES emails (id))''')
+
+cursor.execute('''CREATE TABLE IF NOT EXISTS email_uids
+                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                   account_id INTEGER,
+                   uid TEXT,
+                   FOREIGN KEY (account_id) REFERENCES accounts (id))''')
+                   
 # Domain-specific IMAP and POP3 server configurations
 SERVER_CONFIGS = {
     'mupende.com': {
@@ -174,6 +212,9 @@ def create_account(conn, email, password, protocol=DEFAULT_PROTOCOL):
             except (imaplib.IMAP4.error, poplib.error_proto) as e:
                 logging.error(f"Failed to create {protocol.upper()} account for {email}. Error: {str(e)}")
                 print(f"Failed to create {protocol.upper()} account. Please check the {protocol.upper()} server and port manually.")
+            except sqlite3.IntegrityError:
+                logging.warning(f"{protocol.upper()} account with email {email} already exists in the database.")
+                print(f"An account with email {email} already exists. Please use a different email.")
         else:
             print(f"{protocol.upper()} configuration not found for the domain {domain}.")
             logging.error(f"{protocol.upper()} configuration not found for the domain {domain}.")
