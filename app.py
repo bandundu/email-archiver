@@ -3,6 +3,10 @@ import email_archiver
 import sqlite3
 from dateutil import parser
 import threading
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = Flask(__name__)
 

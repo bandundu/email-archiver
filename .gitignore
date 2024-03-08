@@ -1,4 +1,4 @@
 *.db
 *.log
 __pycache__/
-secret.key
+.env

@@ -7,10 +7,10 @@ import time
 import logging
 import re
 from cryptography.fernet import Fernet
+import os
 
-# Load the secret key from the configuration file
-with open('secret.key', 'rb') as key_file:
-    secret_key = key_file.read()
+# Load the secret key from the environment variable
+secret_key = os.environ.get('SECRET_KEY').encode()
 cipher_suite = Fernet(secret_key)
 
 # Configure logging
