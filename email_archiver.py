@@ -39,7 +39,7 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS emails
                    recipients TEXT,
                    date TEXT,
                    body TEXT,
-                   unique_id TEXT UNIQUE,
+                   unique_id TEXT,
                    FOREIGN KEY (account_id) REFERENCES accounts (id))''')
 
 cursor.execute('''CREATE TABLE IF NOT EXISTS attachments
