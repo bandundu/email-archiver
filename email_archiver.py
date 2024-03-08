@@ -14,8 +14,7 @@ secret_key = os.environ.get('SECRET_KEY').encode()
 cipher_suite = Fernet(secret_key)
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, filename='email_archiver.log', filemode='a',
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Database connection
 conn = sqlite3.connect('email_archive.db')
