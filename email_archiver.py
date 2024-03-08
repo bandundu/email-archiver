@@ -111,7 +111,14 @@ def fetch_and_archive_emails(conn, account_id, protocol, server, port, username,
             email_message = email.message_from_bytes(raw_email)
             
             # Extract email metadata
-            subject = email_message['Subject']
+            subject_parts = email.header.decode_header(email_message['Subject'])
+            decoded_parts = []
+            for part, encoding in subject_parts:
+                if isinstance(part, bytes):
+                    decoded_parts.append(part.decode(encoding or 'utf-8'))
+                else:
+                    decoded_parts.append(part)
+            subject = ''.join(decoded_parts)
             sender = email_message['From']
             recipients = email_message['To']
             date = email_message['Date']
