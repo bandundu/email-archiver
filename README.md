@@ -1,79 +1,99 @@
-# Email Archiver
+# Briefbox
 
-Super simple email archiver with a command-line interface that allows you to archive emails from multiple IMAP accounts into a SQLite database. It provides functionality to manage IMAP accounts, search for emails, and retrieve email details along with attachments.
+Briefbox is a simple tool for archiving emails from multiple IMAP and POP3 accounts. It provides a user-friendly web interface for managing email accounts, searching archived emails, and viewing email details along with attachments.
 
 ## Features
 
-- Create, list, update, and delete IMAP accounts
-- Fetch and archive emails from multiple IMAP accounts
-- Search for emails based on subject, sender, recipients, or body
-- Retrieve email details and attachments
-- Periodically run the email archiving process
+- Add, update, and delete IMAP and POP3 email accounts
+- Automatically fetch and archive emails from configured accounts
+- Search archived emails based on subject, sender, recipients, or body content
+- View email details, including subject, sender, recipients, date, and body
+- Download email attachments
+- Periodic email archiving to keep the database up to date
 
-## Usage
+## Prerequisites
 
-To use the Email Archiver, run the following commands:
+- Docker
+- Docker Compose
 
-- Create a new IMAP account:
+## Setup and Usage
 
-  ```bash
-  python email_archiver.py create_account username password imap_server imap_port mailbox
-  ```
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/bandundu/email-archiver.git
+   cd email-archiver
+   ```
 
-- List all IMAP accounts:
+2. Build and run the Docker containers:
+   ```bash
+   docker-compose up --build
+   ```
 
-  ```bash
-  python email_archiver.py list_accounts
-  ```
+3. Access the web interface by opening a web browser and navigating to `http://localhost:5000`.
 
-- Update an IMAP account:
+4. Use the web interface to add email accounts, search for emails, and view email details.
 
-  ```bash
-  python email_archiver.py update_account account_id username password imap_server imap_port mailbox
-  ```
+## Configuration
 
-- Delete an IMAP account:
+The project uses a SQLite database to store the archived emails and account information. The database file is located at `email_archive.db` in the project directory.
 
-  ```bash
-  python email_archiver.py delete_account account_id
-  ```
+To configure the email archiving settings, you can modify the following files:
 
-- Search for emails:
+- `config.py`: Contains the configuration for generating the secret key used for encryption.
+- `email_archiver.py`: Contains the main logic for fetching and archiving emails from the configured accounts.
 
-  ```bash
-  python email_archiver.py search_emails query
-  ```
+## Project Structure
 
-- Get email details:
+```
+.
+├── Dockerfile
+├── README.md
+├── __pycache__
+│   ├── email_archiver.cpython-310.pyc
+│   └── email_archiver.cpython-39.pyc
+├── app.py
+├── config.py
+├── docker-compose.yml
+├── email_archive.db
+├── email_archiver.py
+├── requirements.txt
+├── secret.key
+└── templates
+    ├── base.html
+    ├── create_account.html
+    ├── delete_account.html
+    ├── email_details.html
+    ├── index.html
+    ├── list_accounts.html
+    ├── search_emails.html
+    └── update_account.html
+```
 
-  ```bash
-  python email_archiver.py get_email email_id
-  ```
-
-- Run the email archiver:
-
-  ```bash
-  python email_archiver.py run_archiver
-  ```
+- `Dockerfile`: Defines the Docker image for the Briefbox application.
+- `app.py`: The main Flask application file that handles the web routes and interfaces with the email archiver.
+- `config.py`: Contains the configuration for generating the secret key used for encryption.
+- `docker-compose.yml`: Defines the Docker Compose configuration for running the Briefbox application.
+- `email_archive.db`: The SQLite database file that stores the archived emails and account information.
+- `email_archiver.py`: Contains the main logic for fetching and archiving emails from the configured accounts.
+- `requirements.txt`: Lists the Python dependencies required for the project.
+- `secret.key`: Stores the secret key used for encryption.
+- `templates/`: Contains the HTML templates for the web interface.
 
 ## Future Enhancements
 
-The following features are planned for future implementation:
-
-- Web-based frontend for managing IMAP accounts and browsing archived emails
-- Support for additional email protocols (e.g., POP3)
-- Integration with external storage services for storing attachments
+- Support for additional email protocols
 - Advanced search capabilities (e.g., date range, multiple criteria)
 - Email export functionality
+- Improved user interface and user experience
 
 ## Contributing
 
-Contributions are welcome! If you have any ideas, suggestions, or bug reports, please open an issue or submit a pull request.
-
-## Contact
-
-For any questions or feature requests, please contact me at charlesdavid@mupende.com.
+Contributions are welcome! If you have any ideas, suggestions, or bug reports, please open an issue or submit a pull request. Make sure to follow the project's code of conduct.
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more information.
+
+## Contact
+
+For any questions or inquiries, please contact me at charlesdavid@mupende.com
