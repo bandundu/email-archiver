@@ -20,7 +20,7 @@ Briefbox is a simple tool for archiving emails from multiple IMAP and POP3 accou
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/email-archiver.git
+   git clone https://github.com/bandundu/email-archiver.git
    cd email-archiver
    ```
 
