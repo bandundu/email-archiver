@@ -10,4 +10,4 @@ services:
     environment:
       - FLASK_ENV=development
       - FLASK_APP=app.py
-      - SECRET_KEY=your_secret_key_here
+      - SECRET_KEY=${SECRET_KEY}
