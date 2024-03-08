@@ -49,22 +49,6 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS email_uids
                    uid TEXT,
                    FOREIGN KEY (account_id) REFERENCES accounts (id))''')
                    
-# Domain-specific IMAP and POP3 server configurations
-SERVER_CONFIGS = {
-    'mupende.com': {
-        'imap': ('imaps.udag.de', 993),
-        'pop3': ('pops.udag.de', 995)
-    },
-    'datacook.de': {
-        'imap': ('imaps.udag.de', 993),
-        'pop3': ('pops.udag.de', 995)
-    },
-    'gmail.com': {
-        'imap': ('imap.gmail.com', 993),
-        'pop3': ('pop.gmail.com', 995)
-    },
-    # Add more domain-specific configurations here
-}
 
 DEFAULT_PROTOCOL = 'pop3'  # Use POP3 as the default protocol
 
@@ -193,45 +177,32 @@ def fetch_and_archive_emails(conn, account_id, protocol, server, port, username,
     except Exception as e:
         logging.error(f"An error occurred during email archiving for account {account_id}: {str(e)}")
 
-def create_account(conn, email, password, protocol=DEFAULT_PROTOCOL):
+def create_account(conn, email, password, protocol, server, port):
     logging.info(f"Creating {protocol.upper()} account for {email}.")
-    domain = email.split('@')[1]
-    if domain in SERVER_CONFIGS:
-        server_config = SERVER_CONFIGS[domain]
-        if protocol in server_config:
-            server, port = server_config[protocol]
-            mailbox = 'INBOX' if protocol == 'imap' else None
-            try:
-                if protocol == 'imap':
-                    client = imaplib.IMAP4_SSL(server, port)
-                    client.login(email, password)
-                    client.logout()
-                elif protocol == 'pop3':
-                    client = poplib.POP3_SSL(server, port)
-                    client.user(email)
-                    client.pass_(password)
-                    client.quit()
-                
-                cursor = conn.cursor()
-                cursor.execute('''INSERT INTO accounts (email, password, protocol, server, port, mailbox)
-                                  VALUES (?, ?, ?, ?, ?, ?)''', (email, password, protocol, server, port, mailbox))
-                conn.commit()
-                logging.info(f"{protocol.upper()} account created successfully for {email}.")
-            except (imaplib.IMAP4.error, poplib.error_proto) as e:
-                logging.error(f"Failed to create {protocol.upper()} account for {email}. Error: {str(e)}")
-                print(f"Failed to create {protocol.upper()} account. Please check the {protocol.upper()} server and port manually.")
-            except sqlite3.IntegrityError:
-                logging.warning(f"{protocol.upper()} account with email {email} already exists in the database.")
-                print(f"An account with email {email} already exists. Please use a different email.")
-        else:
-            print(f"{protocol.upper()} configuration not found for the domain {domain}.")
-            logging.error(f"{protocol.upper()} configuration not found for the domain {domain}.")
-    else:
-        print(f"Domain {domain} not found in the predefined configurations.")
-        logging.error(f"Domain {domain} not found in the predefined configurations.")
-        print(f"Using the default {DEFAULT_PROTOCOL.upper()} protocol.")
-        logging.info(f"Using the default {DEFAULT_PROTOCOL.upper()} protocol.")
-        create_account(conn, email, password, DEFAULT_PROTOCOL)
+    mailbox = 'INBOX' if protocol == 'imap' else None
+    
+    try:
+        if protocol == 'imap':
+            client = imaplib.IMAP4_SSL(server, int(port))
+            client.login(email, password)
+            client.logout()
+        elif protocol == 'pop3':
+            client = poplib.POP3_SSL(server, int(port))
+            client.user(email)
+            client.pass_(password)
+            client.quit()
+        
+        cursor = conn.cursor()
+        cursor.execute('''INSERT INTO accounts (email, password, protocol, server, port, mailbox)
+                          VALUES (?, ?, ?, ?, ?, ?)''', (email, password, protocol, server, int(port), mailbox))
+        conn.commit()
+        logging.info(f"{protocol.upper()} account created successfully for {email}.")
+    except (imaplib.IMAP4.error, poplib.error_proto) as e:
+        logging.error(f"Failed to create {protocol.upper()} account for {email}. Error: {str(e)}")
+        print(f"Failed to create {protocol.upper()} account. Please check the {protocol.upper()} server and port manually.")
+    except sqlite3.IntegrityError:
+        logging.warning(f"{protocol.upper()} account with email {email} already exists in the database.")
+        print(f"An account with email {email} already exists. Please use a different email.")
 
 def read_accounts(conn):
     logging.info("Fetching all IMAP/POP3 accounts from the database.")
