@@ -281,13 +281,19 @@ def search_emails(conn, query):
 def get_email_details(conn, email_id):
     logging.info(f"Fetching email details for email ID {email_id}.")
     cursor = conn.cursor()
-    cursor.execute("SELECT *, (SELECT GROUP_CONCAT(filename) FROM attachments WHERE email_id = emails.id) AS attachments FROM emails WHERE id = ?", (email_id,))
+    
+    cursor.execute("SELECT *, (SELECT GROUP_CONCAT(filename) FROM attachments WHERE email_id = emails.id) AS attachment_filenames FROM emails WHERE id = ?", (email_id,))
     email = cursor.fetchone()
+    
+    cursor.execute("SELECT id, filename FROM attachments WHERE email_id = ?", (email_id,))
+    attachments = cursor.fetchall()
+    
     html_tags = re.compile(r'<(?!!)(?P<tag>[a-zA-Z]+).*?>', re.IGNORECASE)
-
+    
     if email:
         content_type = 'text/plain'
         logging.info(f"Email with ID {email_id} is a plain text email.")
+        
         if '<!doctype html>' in email[6].lower() or '<html' in email[6].lower() or html_tags.search(email[6]) is not None:
             content_type = 'text/html'
             logging.info(f"Email with ID {email_id} is an HTML email.")
@@ -300,12 +306,14 @@ def get_email_details(conn, email_id):
                 email = email[:6] + (email[6], content_type) + (email[-1],)
         else:
             email = email[:6] + (email[6], content_type) + (email[-1],)
-        attachments = email[-1].split(',') if email[-1] else []
+        
+        attachment_filenames = email[-1].split(',') if email[-1] else []
         logging.info(f"Email details and attachments fetched successfully for email ID {email_id}.")
-        return email, attachments
+        return email, attachments, attachment_filenames
+    
     else:
         logging.warning(f"Email with ID {email_id} not found.")
-        return None, None
+        return None, None, None
 
 def run_archiver():
     while True:

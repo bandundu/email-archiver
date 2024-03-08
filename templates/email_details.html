@@ -19,9 +19,9 @@
 {% if attachments %}
 <h3 class="mt-4">Attachments</h3>
 <ul>
-    {% for attachment in attachments %}
-    <li>{{ attachment }}</li>
+    {% for attachment_id, filename in attachments %}
+      <li><a href="{{ url_for('download_attachment', attachment_id=attachment_id) }}" target="_blank">{{ filename }}</a></li>
     {% endfor %}
-</ul>
+  </ul>
 {% endif %}
 {% endblock %}

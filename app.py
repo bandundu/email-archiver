@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, make_response
 import email_archiver
 import sqlite3
 from dateutil import parser
@@ -104,9 +104,26 @@ def search_emails():
 @app.route('/email_details/<int:email_id>')
 def email_details(email_id):
     conn = sqlite3.connect('email_archive.db')
-    email, attachments = email_archiver.get_email_details(conn, email_id)
+    email, attachments, attachment_filenames = email_archiver.get_email_details(conn, email_id)
     conn.close()
-    return render_template('email_details.html', email=email, attachments=attachments)
+    return render_template('email_details.html', email=email, attachments=attachments, attachment_filenames=attachment_filenames)
 
+@app.route('/download_attachment/<int:attachment_id>')
+def download_attachment(attachment_id):
+    conn = sqlite3.connect('email_archive.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT filename, content FROM attachments WHERE id = ?", (attachment_id,))
+    attachment = cursor.fetchone()
+    conn.close()
+    
+    if attachment:
+        filename, content = attachment
+        response = make_response(content)
+        response.headers.set('Content-Type', 'application/octet-stream')
+        response.headers.set('Content-Disposition', 'attachment', filename=filename)
+        return response
+    else:
+        return "Attachment not found", 404
+    
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
