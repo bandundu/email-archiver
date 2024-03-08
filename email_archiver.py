@@ -6,6 +6,12 @@ import sqlite3
 import time
 import logging
 import re
+from cryptography.fernet import Fernet
+
+# Load the secret key from the configuration file
+with open('secret.key', 'rb') as key_file:
+    secret_key = key_file.read()
+cipher_suite = Fernet(secret_key)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, filename='email_archiver.log', filemode='a',
@@ -52,9 +58,11 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS email_uids
 
 DEFAULT_PROTOCOL = 'pop3'  # Use POP3 as the default protocol
 
-def fetch_and_archive_emails(conn, account_id, protocol, server, port, username, password, mailbox=None):
+def fetch_and_archive_emails(conn, account_id, protocol, server, port, username, encrypted_password, mailbox=None):
     try:
         logging.info(f"Started email archiving for account {account_id}.")
+        # Decrypt the password
+        password = cipher_suite.decrypt(encrypted_password).decode()
         if protocol == 'imap':
             # Connect to the IMAP server
             client = imaplib.IMAP4_SSL(server, port)
@@ -192,9 +200,12 @@ def create_account(conn, email, password, protocol, server, port):
             client.pass_(password)
             client.quit()
         
+        # Encrypt the password
+        encrypted_password = cipher_suite.encrypt(password.encode())
+        
         cursor = conn.cursor()
         cursor.execute('''INSERT INTO accounts (email, password, protocol, server, port, mailbox)
-                          VALUES (?, ?, ?, ?, ?, ?)''', (email, password, protocol, server, int(port), mailbox))
+                          VALUES (?, ?, ?, ?, ?, ?)''', (email, encrypted_password, protocol, server, int(port), mailbox))
         conn.commit()
         logging.info(f"{protocol.upper()} account created successfully for {email}.")
     except (imaplib.IMAP4.error, poplib.error_proto) as e:
@@ -226,10 +237,14 @@ def get_account(conn, account_id):
 
 def update_account(conn, account_id, email, password, protocol, server, port, mailbox):
     logging.info(f"Updating account {account_id} with email {email}.")
+    
+    # Encrypt the new password
+    encrypted_password = cipher_suite.encrypt(password.encode())
+    
     cursor = conn.cursor()
     cursor.execute('''UPDATE accounts
                       SET email = ?, password = ?, protocol = ?, server = ?, port = ?, mailbox = ?
-                      WHERE id = ?''', (email, password, protocol, server, port, mailbox, account_id))
+                      WHERE id = ?''', (email, encrypted_password, protocol, server, port, mailbox, account_id))
     conn.commit()
     logging.info(f"Account {account_id} updated successfully.")
 
@@ -288,16 +303,20 @@ def get_email_details(conn, email_id):
 
 def run_archiver():
     while True:
-        logging.info("Starting email archiving cycle...")
-        conn = sqlite3.connect('email_archive.db')
-        accounts = read_accounts(conn)
-        for account in accounts:
-            account_id, email, password, protocol, server, port, mailbox = account
-            fetch_and_archive_emails(conn, account_id, protocol, server, port, email, password, mailbox)
-        conn.close()
-        logging.info("Email archiving cycle completed.")
-        time.sleep(300)  # Wait for 5 minutes before the next archiving cycle
-
+        try:
+            logging.info("Starting email archiving cycle...")
+            conn = sqlite3.connect('email_archive.db')
+            accounts = read_accounts(conn)
+            for account in accounts:
+                account_id, email, encrypted_password, protocol, server, port, mailbox = account
+                fetch_and_archive_emails(conn, account_id, protocol, server, port, email, encrypted_password, mailbox)
+            conn.close()
+            logging.info("Email archiving cycle completed.")
+            time.sleep(300)  # Wait for 5 minutes before the next archiving cycle
+        except Exception as e:
+            logging.error(f"An error occurred during email archiving: {str(e)}")
+            time.sleep(300)  # Wait for 5 minutes before retrying
+            
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Email Archiver CLI')
     subparsers = parser.add_subparsers(dest='command', help='Available commands')

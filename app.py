@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, make_respo
 import email_archiver
 import sqlite3
 from dateutil import parser
+import threading
 
 app = Flask(__name__)
 
@@ -126,6 +127,15 @@ def download_attachment(attachment_id):
         return response
     else:
         return "Attachment not found", 404
-    
+
+def run_archiver_thread():
+    email_archiver.run_archiver()
+
 if __name__ == '__main__':
+    # Start the email archiving thread
+    archiver_thread = threading.Thread(target=run_archiver_thread)
+    archiver_thread.daemon = True
+    archiver_thread.start()
+    
+    # Run the Flask app
     app.run(host='0.0.0.0', port=5000, debug=True)
