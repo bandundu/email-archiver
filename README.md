@@ -1,3 +1,7 @@
+🚨🚨🚨 IMPORTANT DISCLAIMER 🚨🚨🚨
+
+This project is currently still in early development and lacks proper authentication and security measures. It is NOT recommended to expose this application to the public as you are basically providing the world your emails. Use at your own discretion and only in a controlled environment for now.
+
 # Briefbox
 
 Briefbox is a powerful tool for archiving emails from multiple IMAP and POP3 accounts. It provides a user-friendly web interface for managing email accounts, searching archived emails, and viewing email details along with attachments. One of the standout features of Briefbox is its advanced search functionality, which allows users to quickly find specific emails using various criteria.
@@ -28,6 +32,8 @@ Briefbox is a powerful tool for archiving emails from multiple IMAP and POP3 acc
 - Docker
 - Docker Compose
 
+Here's the updated Setup and Usage section for your README:
+
 ## Setup and Usage
 
 1. Clone the repository:
@@ -43,17 +49,42 @@ cd email-archiver
 make generate-key
 ```
 
-3. Build the Docker containers:
+3. Pull the pre-built Docker image from Docker Hub:
 
 ```bash
-make build
+docker-compose pull
 ```
 
 4. Run the Docker containers:
 
 ```bash
-make run
+docker-compose up
 ```
+
+5. Access the web interface by opening a web browser and navigating to `http://localhost:5000`.
+
+6. Use the web interface to add email accounts, search for emails, and view email details.
+
+**Note:** If you want to build the Docker image locally instead of pulling the pre-built image from Docker Hub, you can run the following command before step 4:
+
+```bash
+docker-compose build
+```
+
+This will build the Docker image locally using the provided Dockerfile.
+
+Make sure you have Docker and Docker Compose installed on your system before running the above commands.
+
+To stop the running containers and clean up the environment, you can use the following command:
+
+```bash
+make clean
+```
+
+This command will stop and remove the Docker containers, as well as delete the `.env` file.
+
+Remember to update the `.env` file with your own configuration settings, such as the `SECRET_KEY`, if needed.
+
 
 5. Access the web interface by opening a web browser and navigating to `http://localhost:5000`.
 
@@ -97,7 +128,3 @@ Contributions are welcome! If you have any ideas, suggestions, or bug reports, p
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more information.
-
-## Contact
-
-For any questions or inquiries, please contact me at charlesdavid@mupende.com.
