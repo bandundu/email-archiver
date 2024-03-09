@@ -9,4 +9,6 @@ COPY . .
 
 EXPOSE 5000
 
+VOLUME /app/email_archive.db
+
 CMD ["python", "app.py"]

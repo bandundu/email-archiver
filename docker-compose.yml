@@ -7,6 +7,7 @@ services:
       - "5000:5000"
     volumes:
       - .:/app
+      - .:/app/email_archive.db
     environment:
       - FLASK_ENV=development
       - FLASK_APP=app.py
