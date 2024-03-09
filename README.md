@@ -1,8 +1,8 @@
-**# Briefbox**
+# Briefbox**
 
 Briefbox is a powerful tool for archiving emails from multiple IMAP and POP3 accounts. It provides a user-friendly web interface for managing email accounts, searching archived emails, and viewing email details along with attachments. One of the standout features of Briefbox is its advanced search functionality, which allows users to quickly find specific emails using various criteria.
 
-**## Features**
+## Features**
 
 - Add, update, and delete IMAP and POP3 email accounts
 - Automatically fetch and archive emails from configured accounts
@@ -20,12 +20,12 @@ Briefbox is a powerful tool for archiving emails from multiple IMAP and POP3 acc
 - Download email attachments
 - Periodic email archiving to keep the database up to date
 
-**## Prerequisites**
+## Prerequisites**
 
 - Docker
 - Docker Compose
 
-**## Setup and Usage**
+## Setup and Usage**
 
 1. Clone the repository:
 
@@ -56,13 +56,13 @@ make run
 
 6. Use the web interface to add email accounts, search for emails, and view email details.
 
-**## Configuration**
+## Configuration**
 
 The project uses a SQLite database to store the archived emails and account information. The database file is located at `email_archive.db` in the project directory.
 
 To configure the email archiving settings, you can modify the `email_archiver.py` file, which contains the main logic for fetching and archiving emails from the configured accounts.
 
-**## Reusing an Existing Database**
+## Reusing an Existing Database**
 
 If you want to reuse an existing database with a previously generated Fernet key, follow these steps:
 
@@ -76,25 +76,25 @@ If you want to reuse an existing database with a previously generated Fernet key
 
 5. Run `make build` and `make run` to start the project with your existing database.
 
-**## Known Bugs and Issues**
+## Known Bugs and Issues**
 
 - UTF encoding in sender
 
-**## Future Enhancements**
+## Future Enhancements**
 
 - Email export functionality
 - Gmail and Outlook OAuth2 authentication
 - Advanced search capabilities (e.g., date range, multiple criteria)
 - Improved user interface and user experience
 
-**## Contributing**
+## Contributing**
 
 Contributions are welcome! If you have any ideas, suggestions, or bug reports, please open an issue or submit a pull request. Make sure to follow the project's code of conduct.
 
-**## License**
+## License**
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more information.
 
-**## Contact**
+## Contact**
 
 For any questions or inquiries, please contact me at charlesdavid@mupende.com.
