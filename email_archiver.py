@@ -10,6 +10,7 @@ from cryptography.fernet import Fernet
 import os
 from datetime import datetime
 from email.utils import parsedate_to_datetime
+from dateutil import parser
 
 # Load the secret key from the environment variable
 secret_key = os.environ.get('SECRET_KEY').encode()
@@ -291,11 +292,43 @@ def delete_account(conn, account_id):
     conn.commit()
     logging.info(f"Account {account_id} deleted successfully.")
 
+from datetime import datetime
+
 def search_emails(conn, query):
     logging.info(f"Searching for emails with query: {query}")
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM emails WHERE subject LIKE ? OR sender LIKE ? OR recipients LIKE ? OR body LIKE ?",
-                   (f"%{query}%", f"%{query}%", f"%{query}%", f"%{query}%"))
+    
+    # Remove leading/trailing whitespaces and convert to lowercase
+    query = query.strip().lower()
+    
+    # Check if the query is a valid date string
+    try:
+        query_date = parser.parse(query, fuzzy=True)
+        date_query = query_date.strftime('%Y-%m-%d')
+    except (ValueError, TypeError):
+        date_query = None
+    
+    if date_query:
+        # Search emails by date
+        cursor.execute("SELECT * FROM emails WHERE date LIKE ?", (f"%{date_query}%",))
+    else:
+        # Split the query into individual terms
+        query_terms = re.findall(r'\b\w+\b', query)
+        
+        # Build the SQL query dynamically based on the number of query terms
+        sql_query = "SELECT * FROM emails WHERE "
+        sql_conditions = []
+        sql_params = []
+        
+        for term in query_terms:
+            sql_conditions.append("(subject LIKE ? OR sender LIKE ? OR recipients LIKE ? OR body LIKE ?)")
+            sql_params.extend([f"%{term}%", f"%{term}%", f"%{term}%", f"%{term}%"])
+        
+        sql_query += " OR ".join(sql_conditions)
+        
+        # Execute the SQL query with the dynamic conditions and parameters
+        cursor.execute(sql_query, sql_params)
+    
     emails = cursor.fetchall()
     logging.info(f"Found {len(emails)} emails matching the search query.")
     return emails
