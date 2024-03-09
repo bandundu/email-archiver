@@ -6,6 +6,7 @@ import sqlite3
 import time
 import logging
 import re
+import traceback
 from cryptography.fernet import Fernet
 import os
 from datetime import datetime
@@ -221,6 +222,7 @@ def fetch_and_archive_emails(conn, account_id, protocol, server, port, username,
     
     except Exception as e:
         logging.error(f"An error occurred during email archiving for account {account_id}: {str(e)}")
+        logging.error(f"Exception details: {traceback.format_exc()}")
 
 def create_account(conn, email, password, protocol, server, port):
     logging.info(f"Creating {protocol.upper()} account for {email}.")
