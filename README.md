@@ -1,6 +1,6 @@
 🚨🚨🚨 IMPORTANT DISCLAIMER 🚨🚨🚨
 
-This project is currently still in early development and lacks proper authentication and security measures. It is NOT recommended to expose this application to the public as you are basically providing the world your emails. Use at your own discretion and only in a controlled environment for now.
+**This project is currently still in early development and lacks proper authentication.** It is **NOT** recommended to expose this application to the public as you will be providing the world your emails. Use at your own discretion and only in a controlled environment for now.
 
 # Briefbox
 
