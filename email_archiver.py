@@ -8,6 +8,8 @@ import logging
 import re
 from cryptography.fernet import Fernet
 import os
+from datetime import datetime
+from email.utils import parsedate_to_datetime
 
 # Load the secret key from the environment variable
 secret_key = os.environ.get('SECRET_KEY').encode()
@@ -36,9 +38,9 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS emails
                    subject TEXT,
                    sender TEXT,
                    recipients TEXT,
-                   date TEXT,
+                   date DATETIME,
                    body TEXT,
-                   unique_id TEXT UNIQUE,
+                   unique_id TEXT,
                    FOREIGN KEY (account_id) REFERENCES accounts (id))''')
 
 cursor.execute('''CREATE TABLE IF NOT EXISTS attachments
@@ -57,6 +59,15 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS email_uids
 
 DEFAULT_PROTOCOL = 'pop3'  # Use POP3 as the default protocol
 
+def parse_date(date_str):
+    if date_str is None:
+        return None
+    try:
+        date_tuple = parsedate_to_datetime(date_str)
+        return date_tuple.strftime('%Y-%m-%d %H:%M:%S')
+    except (TypeError, ValueError):
+        return None
+    
 def fetch_and_archive_emails(conn, account_id, protocol, server, port, username, encrypted_password, mailbox=None):
     try:
         logging.info(f"Started email archiving for account {account_id}.")
@@ -166,8 +177,9 @@ def fetch_and_archive_emails(conn, account_id, protocol, server, port, username,
                     body = payload.decode(errors='replace')
             
             # Insert email metadata into the database
+            parsed_date = parse_date(date)
             cursor.execute('''INSERT INTO emails (account_id, subject, sender, recipients, date, body, unique_id)
-                              VALUES (?, ?, ?, ?, ?, ?, ?)''', (account_id, subject, sender, recipients, date, body, unique_id))
+                              VALUES (?, ?, ?, ?, ?, ?, ?)''', (account_id, subject, sender, recipients, parsed_date, body, unique_id))
             email_id = cursor.lastrowid
             
             logging.info(f"Inserted email with UID {uid} for account {account_id} into the database.")
