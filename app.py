@@ -4,6 +4,7 @@ import sqlite3
 from dateutil import parser
 import threading
 from dotenv import load_dotenv
+from email_archiver import initialize_database
 
 # Load environment variables from .env file
 load_dotenv()
@@ -54,10 +55,7 @@ def create_account():
         port = request.form['port']
         conn = sqlite3.connect('email_archive.db')
         try:
-            account_id = email_archiver.create_account(conn, email, password, protocol, server, port)
-            if account_id:
-                # Fetch and archive emails for the newly created account
-                email_archiver.fetch_and_archive_emails(conn, account_id, protocol, server, port, email, password)
+            email_archiver.create_account(conn, email, password, protocol, server, port)
             conn.close()
             return redirect(url_for('list_accounts'))
         except sqlite3.IntegrityError:
@@ -139,6 +137,8 @@ def run_archiver_thread():
     email_archiver.run_archiver()
 
 if __name__ == '__main__':
+    # Initialize the database
+    initialize_database()
     # Start the email archiving thread
     archiver_thread = threading.Thread(target=run_archiver_thread)
     archiver_thread.daemon = True

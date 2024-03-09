@@ -12,51 +12,67 @@ import os
 from datetime import datetime
 from email.utils import parsedate_to_datetime
 from dateutil import parser
+from dotenv import load_dotenv
+from jwt import InvalidTokenError
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Load the secret key from the environment variable
 secret_key = os.environ.get('SECRET_KEY').encode()
+# In email_archiver.py
 cipher_suite = Fernet(secret_key)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Database connection
-conn = sqlite3.connect('email_archive.db')
-cursor = conn.cursor()
+def initialize_database():
+    db_exists = os.path.exists('email_archive.db')
+    if not db_exists:
+        # Connect to the database. This will create the file if it does not exist.
+        conn = sqlite3.connect('email_archive.db')
+        cursor = conn.cursor()
 
-# Create tables if they don't exist
-cursor.execute('''CREATE TABLE IF NOT EXISTS accounts
-                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                   email TEXT UNIQUE,
-                   password TEXT,
-                   protocol TEXT,
-                   server TEXT,
-                   port INTEGER,
-                   mailbox TEXT)''')
+        # Create tables if they don't exist
+        cursor.execute('''CREATE TABLE IF NOT EXISTS accounts
+                          (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                           email TEXT UNIQUE,
+                           password TEXT,
+                           protocol TEXT,
+                           server TEXT,
+                           port INTEGER,
+                           mailbox TEXT)''')
 
-cursor.execute('''CREATE TABLE IF NOT EXISTS emails
-                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                   account_id INTEGER,
-                   subject TEXT,
-                   sender TEXT,
-                   recipients TEXT,
-                   date DATETIME,
-                   body TEXT,
-                   unique_id TEXT,
-                   FOREIGN KEY (account_id) REFERENCES accounts (id))''')
+        cursor.execute('''CREATE TABLE IF NOT EXISTS emails
+                          (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                           account_id INTEGER,
+                           subject TEXT,
+                           sender TEXT,
+                           recipients TEXT,
+                           date DATETIME,
+                           body TEXT,
+                           unique_id TEXT,
+                           FOREIGN KEY (account_id) REFERENCES accounts (id))''')
 
-cursor.execute('''CREATE TABLE IF NOT EXISTS attachments
-                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                   email_id INTEGER,
-                   filename TEXT,
-                   content BLOB,
-                   FOREIGN KEY (email_id) REFERENCES emails (id))''')
+        cursor.execute('''CREATE TABLE IF NOT EXISTS attachments
+                          (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                           email_id INTEGER,
+                           filename TEXT,
+                           content BLOB,
+                           FOREIGN KEY (email_id) REFERENCES emails (id))''')
 
-cursor.execute('''CREATE TABLE IF NOT EXISTS email_uids
-                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                   account_id INTEGER,
-                   uid TEXT,
-                   FOREIGN KEY (account_id) REFERENCES accounts (id))''')
+        cursor.execute('''CREATE TABLE IF NOT EXISTS email_uids
+                          (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                           account_id INTEGER,
+                           uid TEXT,
+                           FOREIGN KEY (account_id) REFERENCES accounts (id))''')
+        
+        # Commit changes and close the connection
+        conn.commit()
+        conn.close()
+        logging.info("Database initialized successfully.")
+    else:
+        logging.info("Database already exists.")
                    
 
 DEFAULT_PROTOCOL = 'pop3'  # Use POP3 as the default protocol
@@ -73,8 +89,13 @@ def parse_date(date_str):
 def fetch_and_archive_emails(conn, account_id, protocol, server, port, username, encrypted_password, mailbox=None):
     try:
         logging.info(f"Started email archiving for account {account_id}.")
-        # Decrypt the password
-        password = cipher_suite.decrypt(encrypted_password).decode()
+        if not isinstance(encrypted_password, bytes):
+            encrypted_password = encrypted_password.encode()
+        # In email_archiver.py, in the fetch_and_archive_emails function
+        try:
+            password = cipher_suite.decrypt(encrypted_password).decode()
+        except InvalidTokenError as e:
+            print("Decryption Error:", str(e))
         if protocol == 'imap':
             # Connect to the IMAP server
             client = imaplib.IMAP4_SSL(server, port)
@@ -193,22 +214,24 @@ def fetch_and_archive_emails(conn, account_id, protocol, server, port, username,
                 if part.get('Content-Disposition') is None:
                     continue
                 
-                filename_parts = email.header.decode_header(part.get_filename())
-                decoded_filename_parts = []
-                for part, encoding in filename_parts:
-                    if isinstance(part, bytes):
-                        decoded_filename_parts.append(part.decode(encoding or 'utf-8'))
-                    else:
-                        decoded_filename_parts.append(part)
-                filename = ''.join(decoded_filename_parts)
-                
+                filename = part.get_filename()
                 if filename:
+                    filename_parts = email.header.decode_header(filename)
+                    decoded_filename_parts = []
+                    for filename_part, encoding in filename_parts:
+                        if isinstance(filename_part, bytes):
+                            decoded_filename_parts.append(filename_part.decode(encoding or 'utf-8'))
+                        else:
+                            decoded_filename_parts.append(filename_part)
+                    filename = ''.join(decoded_filename_parts)
+                    
+                    logging.info(f"Found attachment {filename} for email with UID {uid} for account {account_id}.")
                     content = part.get_payload(decode=True)
                     cursor.execute('''INSERT INTO attachments (email_id, filename, content)
-                                      VALUES (?, ?, ?)''', (email_id, filename, content))
+                                    VALUES (?, ?, ?)''', (email_id, filename, content))
                     
                     logging.info(f"Saved attachment {filename} for email with UID {uid} for account {account_id}.")
-        
+                    
         conn.commit()
         
         # Close the connection
@@ -248,6 +271,10 @@ def create_account(conn, email, password, protocol, server, port):
         account_id = cursor.lastrowid
         conn.commit()
         logging.info(f"{protocol.upper()} account created successfully for {email}.")
+        
+        # Run email archiving for the newly created account
+        run_archiver_once(account_id)
+        
         return account_id
     except (imaplib.IMAP4.error, poplib.error_proto) as e:
         logging.error(f"Failed to create {protocol.upper()} account for {email}. Error: {str(e)}")
@@ -401,6 +428,24 @@ def get_email_details(conn, email_id):
     else:
         logging.warning(f"Email with ID {email_id} not found.")
         return None, None, None
+
+def run_archiver_once(account_id):
+    try:
+        logging.info(f"Starting email archiving for account {account_id}...")
+        conn = sqlite3.connect('email_archive.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM accounts WHERE id = ?", (account_id,))
+        account = cursor.fetchone()
+        if account:
+            account_id, email, encrypted_password, protocol, server, port, mailbox = account
+            fetch_and_archive_emails(conn, account_id, protocol, server, port, email, encrypted_password, mailbox)
+        else:
+            logging.warning(f"Account with ID {account_id} not found.")
+        conn.close()
+        logging.info(f"Email archiving completed for account {account_id}.")
+    except Exception as e:
+        logging.error(f"An error occurred during email archiving for account {account_id}: {str(e)}")
+        logging.error(f"Exception details: {traceback.format_exc()}")
 
 def run_archiver():
     while True:
