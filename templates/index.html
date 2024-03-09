@@ -22,7 +22,6 @@
             <th>Subject</th>
             <th>Sender</th>
             <th>Date</th>
-            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -32,9 +31,6 @@
             <td><a href="{{ url_for('email_details', email_id=email[0]) }}">{{ email[2] }}</a></td>
             <td>{{ email[3] }}</td>
             <td>{{ email[5]|format_date }}</td>
-            <td>
-                <a href="{{ url_for('email_details', email_id=email[0]) }}" class="btn btn-sm btn-primary">Details</a>
-            </td>
         </tr>
         {% endfor %}
     </tbody>
