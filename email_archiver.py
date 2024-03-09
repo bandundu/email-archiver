@@ -297,48 +297,64 @@ from datetime import datetime
 def search_emails(conn, query):
     logging.info(f"Searching for emails with query: {query}")
     cursor = conn.cursor()
-    
+
     # Remove leading/trailing whitespaces and convert to lowercase
     query = query.strip().lower()
-    
+
     # Check if the query is empty
     if not query:
         logging.info("Empty search query. Returning no results.")
         return []  # Return an empty list
-    
-    # Check if the query is a valid date string
-    try:
-        query_date = parser.parse(query, fuzzy=True)
-        date_query = query_date.strftime('%Y-%m-%d')
-    except (ValueError, TypeError):
-        date_query = None
-    
-    if date_query:
-        # Search emails by date (case-insensitive)
-        cursor.execute("SELECT * FROM emails WHERE LOWER(date) LIKE ?", (f"%{date_query}%",))
+
+    # Check if the query contains a date range
+    date_range_pattern = r'(\d{1,2}\s+\w{3}\s+\d{4})\s*-\s*(\d{1,2}\s+\w{3}\s+\d{4})'
+    date_range_match = re.search(date_range_pattern, query)
+
+    if date_range_match:
+        start_date_str, end_date_str = date_range_match.groups()
+        try:
+            start_date = parser.parse(start_date_str, fuzzy=True).strftime('%Y-%m-%d')
+            end_date = parser.parse(end_date_str, fuzzy=True).strftime('%Y-%m-%d')
+            cursor.execute("SELECT * FROM emails WHERE date BETWEEN ? AND ?", (start_date, end_date))
+            emails = cursor.fetchall()
+            logging.info(f"Found {len(emails)} emails within the date range.")
+            return emails
+        except (ValueError, TypeError):
+            logging.info("Invalid date range format. Proceeding with normal search.")
     else:
-        # Split the query into individual terms
-        query_terms = re.findall(r'\b\w+\b', query)
-        
-        # Check if there are any valid search terms
-        if not query_terms:
-            logging.info("No valid search terms found. Returning no results.")
-            return []  # Return an empty list
-        
-        # Build the SQL query dynamically based on the number of query terms
-        sql_query = "SELECT * FROM emails WHERE "
-        sql_conditions = []
-        sql_params = []
-        
-        for term in query_terms:
-            sql_conditions.append("(LOWER(subject) LIKE ? OR LOWER(sender) LIKE ? OR LOWER(recipients) LIKE ? OR LOWER(body) LIKE ?)")
-            sql_params.extend([f"%{term}%", f"%{term}%", f"%{term}%", f"%{term}%"])
-        
-        sql_query += " OR ".join(sql_conditions)
-        
-        # Execute the SQL query with the dynamic conditions and parameters
-        cursor.execute(sql_query, sql_params)
-    
+        # Check if the query is a valid date string
+        try:
+            query_date = parser.parse(query, fuzzy=True)
+            date_query = query_date.strftime('%Y-%m-%d')
+        except (ValueError, TypeError):
+            date_query = None
+
+        if date_query:
+            # Search emails by date (case-insensitive)
+            cursor.execute("SELECT * FROM emails WHERE LOWER(date) LIKE ?", (f"%{date_query}%",))
+        else:
+            # Split the query into individual terms
+            query_terms = re.findall(r'\b\w+\b', query)
+
+            # Check if there are any valid search terms
+            if not query_terms:
+                logging.info("No valid search terms found. Returning no results.")
+                return []  # Return an empty list
+
+            # Build the SQL query dynamically based on the number of query terms
+            sql_query = "SELECT * FROM emails WHERE "
+            sql_conditions = []
+            sql_params = []
+
+            for term in query_terms:
+                sql_conditions.append("(LOWER(subject) LIKE ? OR LOWER(sender) LIKE ? OR LOWER(recipients) LIKE ? OR LOWER(body) LIKE ?)")
+                sql_params.extend([f"%{term}%", f"%{term}%", f"%{term}%", f"%{term}%"])
+
+            sql_query += " OR ".join(sql_conditions)
+
+            # Execute the SQL query with the dynamic conditions and parameters
+            cursor.execute(sql_query, sql_params)
+
     emails = cursor.fetchall()
     logging.info(f"Found {len(emails)} emails matching the search query.")
     return emails

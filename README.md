@@ -2,7 +2,7 @@
 
 Briefbox is a powerful tool for archiving emails from multiple IMAP and POP3 accounts. It provides a user-friendly web interface for managing email accounts, searching archived emails, and viewing email details along with attachments. One of the standout features of Briefbox is its advanced search functionality, which allows users to quickly find specific emails using various criteria.
 
-## Features
+**## Features**
 
 - Add, update, and delete IMAP and POP3 email accounts
 - Automatically fetch and archive emails from configured accounts
@@ -10,12 +10,15 @@ Briefbox is a powerful tool for archiving emails from multiple IMAP and POP3 acc
   - Search archived emails based on subject, sender, recipients, or body content
   - Perform case-insensitive searches for more accurate results
   - Search for emails by date using flexible date formats (e.g., "26 Jan 2024", "2024-01-26", "January 26, 2024")
+  - **Search for emails within a specific date range using the format "DD MMM YYYY - DD MMM YYYY" (e.g., "26 Jan 2024 - 28 Jan 2024")**
   - Use multiple search terms to narrow down results
   - Examples:
     - Search for emails from a specific sender: `john@example.com`
     - Find emails with a specific subject: `"Project Update"`
     - Search for emails containing certain keywords in the body: `meeting agenda`
+    - Combine multiple criteria: `from:john@example.com subject:"Project Update" meeting`
     - Search for emails by date: `26 Jan 2024`, `2024-01-26`, `January 26, 2024`
+    - **Search for emails within a date range: `26 Jan 2024 - 28 Jan 2024`**
 - View email details, including subject, sender, recipients, date, and body
 - Download email attachments
 - Periodic email archiving to keep the database up to date
