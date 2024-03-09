@@ -26,7 +26,7 @@ def index():
     cursor = conn.cursor()
 
     # Fetch the latest archived emails
-    cursor.execute("SELECT * FROM emails ORDER BY date DESC LIMIT 5")
+    cursor.execute("SELECT * FROM emails ORDER BY date DESC LIMIT 10")
     latest_emails = cursor.fetchall()
 
     # Fetch summary statistics
