@@ -54,7 +54,10 @@ def create_account():
         port = request.form['port']
         conn = sqlite3.connect('email_archive.db')
         try:
-            email_archiver.create_account(conn, email, password, protocol, server, port)
+            account_id = email_archiver.create_account(conn, email, password, protocol, server, port)
+            if account_id:
+                # Fetch and archive emails for the newly created account
+                email_archiver.fetch_and_archive_emails(conn, account_id, protocol, server, port, email, password)
             conn.close()
             return redirect(url_for('list_accounts'))
         except sqlite3.IntegrityError:

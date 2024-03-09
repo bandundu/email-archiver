@@ -243,14 +243,18 @@ def create_account(conn, email, password, protocol, server, port):
         cursor = conn.cursor()
         cursor.execute('''INSERT INTO accounts (email, password, protocol, server, port, mailbox)
                           VALUES (?, ?, ?, ?, ?, ?)''', (email, encrypted_password, protocol, server, int(port), mailbox))
+        account_id = cursor.lastrowid
         conn.commit()
         logging.info(f"{protocol.upper()} account created successfully for {email}.")
+        return account_id
     except (imaplib.IMAP4.error, poplib.error_proto) as e:
         logging.error(f"Failed to create {protocol.upper()} account for {email}. Error: {str(e)}")
         print(f"Failed to create {protocol.upper()} account. Please check the {protocol.upper()} server and port manually.")
+        return None
     except sqlite3.IntegrityError:
         logging.warning(f"{protocol.upper()} account with email {email} already exists in the database.")
         print(f"An account with email {email} already exists. Please use a different email.")
+        return None
 
 def read_accounts(conn):
     logging.info("Fetching all IMAP/POP3 accounts from the database.")
