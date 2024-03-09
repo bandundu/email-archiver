@@ -132,6 +132,43 @@ def download_attachment(attachment_id):
         return response
     else:
         return "Attachment not found", 404
+    
+@app.route('/export_email/<int:email_id>')
+def export_email(email_id):
+    conn = sqlite3.connect('email_archive.db')
+    email_data = email_archiver.export_email(conn, email_id)
+    conn.close()
+    
+    if email_data:
+        response = make_response(email_data)
+        response.headers.set('Content-Type', 'message/rfc822')
+        response.headers.set('Content-Disposition', 'attachment', filename=f"email_{email_id}.eml")
+        return response
+    else:
+        return "Email not found", 404
+
+@app.route('/export_all_emails')
+def export_all_emails():
+    conn = sqlite3.connect('email_archive.db')
+    zip_data = email_archiver.export_all_emails(conn)
+    conn.close()
+    
+    response = make_response(zip_data)
+    response.headers.set('Content-Type', 'application/zip')
+    response.headers.set('Content-Disposition', 'attachment', filename="all_emails.zip")
+    return response
+
+@app.route('/export_search_results', methods=['POST'])
+def export_search_results():
+    query = request.form['query']
+    conn = sqlite3.connect('email_archive.db')
+    zip_data = email_archiver.export_search_results(conn, query)
+    conn.close()
+    
+    response = make_response(zip_data)
+    response.headers.set('Content-Type', 'application/zip')
+    response.headers.set('Content-Disposition', 'attachment', filename="search_results.zip")
+    return response
 
 def run_archiver_thread():
     email_archiver.run_archiver()

@@ -1,5 +1,6 @@
 import argparse
 import imaplib
+import io
 import poplib
 import email
 import sqlite3
@@ -7,6 +8,7 @@ import time
 import logging
 import re
 import traceback
+import zipfile
 from cryptography.fernet import Fernet
 import os
 from datetime import datetime
@@ -325,7 +327,45 @@ def delete_account(conn, account_id):
     conn.commit()
     logging.info(f"Account {account_id} deleted successfully.")
 
-from datetime import datetime
+
+def export_email(conn, email_id):
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM emails WHERE id = ?", (email_id,))
+    email = cursor.fetchone()
+    
+    if email:
+        email_data = email[-1]  # Assuming the last column contains the raw email data
+        return email_data
+    else:
+        return None
+
+def export_all_emails(conn):
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM emails")
+    emails = cursor.fetchall()
+    
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        for email in emails:
+            email_id = email[0]
+            email_data = email[-1]  # Assuming the last column contains the raw email data
+            zip_file.writestr(f"email_{email_id}.eml", email_data)
+    
+    zip_buffer.seek(0)
+    return zip_buffer.getvalue()
+
+def export_search_results(conn, query):
+    emails = search_emails(conn, query)
+    
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        for email in emails:
+            email_id = email[0]
+            email_data = email[-1]  # Assuming the last column contains the raw email data
+            zip_file.writestr(f"email_{email_id}.eml", email_data)
+    
+    zip_buffer.seek(0)
+    return zip_buffer.getvalue()
 
 def search_emails(conn, query):
     logging.info(f"Searching for emails with query: {query}")
