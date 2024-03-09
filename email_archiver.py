@@ -103,15 +103,32 @@ def fetch_and_archive_emails(conn, account_id, protocol, server, port, username,
             
             # Extract email metadata
             subject_parts = email.header.decode_header(email_message['Subject'])
-            decoded_parts = []
+            decoded_subject_parts = []
             for part, encoding in subject_parts:
                 if isinstance(part, bytes):
-                    decoded_parts.append(part.decode(encoding or 'utf-8'))
+                    decoded_subject_parts.append(part.decode(encoding or 'utf-8'))
                 else:
-                    decoded_parts.append(part)
-            subject = ''.join(decoded_parts)
-            sender = email_message['From']
-            recipients = email_message['To']
+                    decoded_subject_parts.append(part)
+            subject = ''.join(decoded_subject_parts)
+
+            sender_parts = email.header.decode_header(email_message['From'])
+            decoded_sender_parts = []
+            for part, encoding in sender_parts:
+                if isinstance(part, bytes):
+                    decoded_sender_parts.append(part.decode(encoding or 'utf-8'))
+                else:
+                    decoded_sender_parts.append(part)
+            sender = ''.join(decoded_sender_parts)
+
+            recipients_parts = email.header.decode_header(email_message['To'])
+            decoded_recipients_parts = []
+            for part, encoding in recipients_parts:
+                if isinstance(part, bytes):
+                    decoded_recipients_parts.append(part.decode(encoding or 'utf-8'))
+                else:
+                    decoded_recipients_parts.append(part)
+            recipients = ''.join(decoded_recipients_parts)
+
             date = email_message['Date']
             message_id = email_message['Message-ID']
             
@@ -162,7 +179,15 @@ def fetch_and_archive_emails(conn, account_id, protocol, server, port, username,
                 if part.get('Content-Disposition') is None:
                     continue
                 
-                filename = part.get_filename()
+                filename_parts = email.header.decode_header(part.get_filename())
+                decoded_filename_parts = []
+                for part, encoding in filename_parts:
+                    if isinstance(part, bytes):
+                        decoded_filename_parts.append(part.decode(encoding or 'utf-8'))
+                    else:
+                        decoded_filename_parts.append(part)
+                filename = ''.join(decoded_filename_parts)
+                
                 if filename:
                     content = part.get_payload(decode=True)
                     cursor.execute('''INSERT INTO attachments (email_id, filename, content)

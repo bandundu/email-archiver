@@ -63,44 +63,17 @@ If you want to reuse an existing database with a previously generated Fernet key
 
 5. Run `make build` and `make run` to start the project with your existing database.
 
-## Project Structure
+## Known Bugs and Issues
 
-```
-.
-├── Dockerfile
-├── Makefile
-├── README.md
-├── app.py
-├── docker-compose.yml
-├── email_archive.db
-├── email_archiver.py
-├── requirements.txt
-└── templates
-    ├── base.html
-    ├── create_account.html
-    ├── delete_account.html
-    ├── email_details.html
-    ├── index.html
-    ├── list_accounts.html
-    ├── search_emails.html
-    └── update_account.html
-```
-
-- `Dockerfile`: Defines the Docker image for the Briefbox application.
-- `Makefile`: Contains commands for generating the Fernet key, building and running the Docker containers, and cleaning up.
-- `app.py`: The main Flask application file that handles the web routes and interfaces with the email archiver.
-- `docker-compose.yml`: Defines the Docker Compose configuration for running the Briefbox application.
-- `email_archive.db`: The SQLite database file that stores the archived emails and account information.
-- `email_archiver.py`: Contains the main logic for fetching and archiving emails from the configured accounts.
-- `requirements.txt`: Lists the Python dependencies required for the project.
-- `templates/`: Contains the HTML templates for the web interface.
+- UTF encoding in sender
 
 ## Future Enhancements
 
-- Support for additional email protocols
-- Advanced search capabilities (e.g., date range, multiple criteria)
 - Email export functionality
+- Gmail and Outlook OAuth2 authentication
+- Advanced search capabilities (e.g., date range, multiple criteria)
 - Improved user interface and user experience
+
 
 ## Contributing
 
