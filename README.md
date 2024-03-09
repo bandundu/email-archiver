@@ -113,6 +113,7 @@ If you want to reuse an existing database with a previously generated Fernet key
 ## Known Bugs and Issues
 
 - UTF encoding in sender
+- No ARM support
 
 ## Future Enhancements
 
