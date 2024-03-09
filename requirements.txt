@@ -2,3 +2,4 @@ Flask
 cryptography
 python-dateutil
 python-dotenv
+PyJWT
