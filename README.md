@@ -6,6 +6,11 @@
 
 Briefbox is a powerful tool for archiving emails from multiple IMAP and POP3 accounts. It provides a user-friendly web interface for managing email accounts, searching archived emails, and viewing email details along with attachments. One of the standout features of Briefbox is its advanced search functionality, which allows users to quickly find specific emails using various criteria.
 
+![grafik](https://github.com/bandundu/email-archiver/assets/41874924/1340390c-ee1f-491a-a5b8-f4837a62f1e6)
+![grafik](https://github.com/bandundu/email-archiver/assets/41874924/2fa28f1a-1ab1-4228-99ca-70390c00c228)
+![grafik](https://github.com/bandundu/email-archiver/assets/41874924/ed698973-e855-47d2-b388-9addac26d53a)
+
+
 ## Features
 
 - Add, update, and delete IMAP and POP3 email accounts
