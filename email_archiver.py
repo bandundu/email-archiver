@@ -104,7 +104,7 @@ def fetch_and_archive_emails(conn, account_id, protocol, server, port, username,
             client.login(username, password)
             
             # Select the mailbox to fetch emails from
-            client.select(mailbox)
+            client.select(mailbox, readonly=True)
             
             # Fetch email UIDs
             _, data = client.uid('search', None, 'ALL')
