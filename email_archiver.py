@@ -256,14 +256,13 @@ def create_account(conn, email, password, protocol, server, port):
     try:
         if protocol == 'imap':
             client = imaplib.IMAP4_SSL(server, int(port))
-            password_bytes = password.encode('utf-8')  # Encode the password using UTF-8
-            client.login(email, password_bytes.decode('utf-8'))  # Decode the bytes back to a string
+            client._mode_utf8() 
+            client.login(email, password)
             client.logout()
         elif protocol == 'pop3':
             client = poplib.POP3_SSL(server, int(port))
             client.user(email)
-            password_bytes = password.encode('utf-8')  # Encode the password using UTF-8
-            client.pass_(password_bytes.decode('utf-8'))  # Decode the bytes back to a string
+            client.pass_(password)
             client.quit()
         
         # Encrypt the password
