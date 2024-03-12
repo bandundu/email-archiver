@@ -101,6 +101,7 @@ def fetch_and_archive_emails(conn, account_id, protocol, server, port, username,
         if protocol == 'imap':
             # Connect to the IMAP server
             client = imaplib.IMAP4_SSL(server, port)
+            client._mode_utf8() 
             client.login(username, password)
             
             # Select the mailbox to fetch emails from
