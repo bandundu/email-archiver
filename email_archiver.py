@@ -157,14 +157,18 @@ def fetch_and_archive_emails(conn, account_id, protocol, server, port, username,
                     decoded_sender_parts.append(part)
             sender = ''.join(decoded_sender_parts)
 
-            recipients_parts = email.header.decode_header(email_message['To'])
-            decoded_recipients_parts = []
-            for part, encoding in recipients_parts:
-                if isinstance(part, bytes):
-                    decoded_recipients_parts.append(part.decode(encoding or 'utf-8'))
-                else:
-                    decoded_recipients_parts.append(part)
-            recipients = ''.join(decoded_recipients_parts)
+            # Check if 'To' header is None before decoding
+            if email_message['To'] is not None:
+                recipients_parts = email.header.decode_header(email_message['To'])
+                decoded_recipients_parts = []
+                for part, encoding in recipients_parts:
+                    if isinstance(part, bytes):
+                        decoded_recipients_parts.append(part.decode(encoding or 'utf-8'))
+                    else:
+                        decoded_recipients_parts.append(part)
+                recipients = ''.join(decoded_recipients_parts)
+            else:
+                recipients = ""  # empty string if no recipients ""
 
             date = email_message['Date']
             message_id = email_message['Message-ID']
