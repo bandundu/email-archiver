@@ -2,5 +2,4 @@
 *.log
 .env
 __pycache__
-frontend
 tests
