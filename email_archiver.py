@@ -130,6 +130,9 @@ def fetch_and_archive_emails(conn, account_id, protocol, server, port, username,
             if protocol == 'imap':
                 # Fetch the email content using IMAP
                 _, data = client.uid('fetch', uid, '(RFC822)')
+                if not data or not data[0] or data[0] is None:
+                    logging.error(f"Failed to fetch email with UID {uid}.")
+                    continue  # Skip this email and proceed to the next one
                 raw_email = data[0][1]
             elif protocol == 'pop3':
                 # Fetch the email content using POP3

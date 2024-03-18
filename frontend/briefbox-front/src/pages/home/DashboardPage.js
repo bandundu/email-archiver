@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { IconButton, AppBar, Toolbar, Typography } from "@mui/material";
+import { IconButton, AppBar, Toolbar, Typography, Box } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import { useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
@@ -12,6 +12,7 @@ import SearchBar from "./SearchBar";
 
 function DashboardPage() {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleDrawer = () => {
@@ -19,17 +20,19 @@ function DashboardPage() {
   };
 
   return (
-    <div style={{ display: "flex", height: "100vh", backgroundColor: "#000000" }}>
-      <IconButton
-        color="inherit"
-        aria-label="ChevronRight"
-        onClick={toggleDrawer}
-        sx={{ color: "white" }}
-      >
-        <MenuIcon />
-      </IconButton>
+    <Box sx={{ display: "flex", flexDirection: isMobile ? "column" : "row", minHeight: "100vh", backgroundColor: "#000000" }}>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-start", padding: "8px" }}>
+        <IconButton
+          color="inherit"
+          aria-label="ChevronRight"
+          onClick={toggleDrawer}
+          sx={{ color: "white" }}
+        >
+          <MenuIcon />
+        </IconButton>
+      </Box>
       <Sidebar isOpen={isOpen} toggleDrawer={toggleDrawer} />
-      <div style={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
+      <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", backgroundColor: "#000000" }}>
         <AppBar
           position="static"
           sx={{ backgroundColor: "#000000", top: "auto", bottom: 0 }}
@@ -44,8 +47,8 @@ function DashboardPage() {
             <SearchBar />
           </Toolbar>
         </AppBar>
-        <main style={{ flexGrow: 1, padding: "24px", backgroundColor: "#1c1c1c", display: "flex" }}>
-          <div style={{ flexGrow: 1, marginRight: "24px" }}>
+        <Box component="main" sx={{ flexGrow: 1, padding: "24px", backgroundColor: "#1c1c1c", display: "flex", flexDirection: isMobile ? "column" : "row" }}>
+          <Box sx={{ flexGrow: 1, marginRight: isMobile ? 0 : "24px", marginBottom: isMobile ? "24px" : 0 }}>
             <Typography variant="h4" gutterBottom sx={{ color: "white" }}>
               Welcome to BriefBox
             </Typography>
@@ -54,14 +57,14 @@ function DashboardPage() {
               navigate through the app using the menu on the left.
             </Typography>
             <LatestArchivedEmails />
-          </div>
-          <div style={{ width: "300px" }}>
+          </Box>
+          <Box sx={{ width: isMobile ? "100%" : "300px" }}>
             <Statistics />
             <FileUploadWidget />
-          </div>
-        </main>
-      </div>
-    </div>
+          </Box>
+        </Box>
+      </Box>
+    </Box>
   );
 }
 
