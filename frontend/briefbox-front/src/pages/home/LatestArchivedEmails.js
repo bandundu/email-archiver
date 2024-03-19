@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
   Typography,
   Table,
@@ -11,25 +12,20 @@ import {
 } from '@mui/material';
 
 function LatestArchivedEmails() {
-  // Mock data for the latest archived emails
-  const emails = [
-    {
-      subject: 'Your verification code is 549536',
-      sender: 'Anthropic <support@mail.anthropic.com>',
-      date: 'Sun, 17 Mar 2024 13:22:29',
-    },
-    {
-      subject: 'Your verification code is 523327',
-      sender: 'Anthropic <support@mail.anthropic.com>',
-      date: 'Sun, 17 Mar 2024 13:19:42',
-    },
-    {
-      subject: 'Warnung zum Kontakt mit Petra Neu auf Kleinanzeigen',
-      sender: 'Kleinanzeigen <noreply@kleinanzeigen.de>',
-      date: 'Sun, 17 Mar 2024 08:20:14',
-    },
-    // Add more email objects as needed
-  ];
+  const [emails, setEmails] = useState([]);
+
+  useEffect(() => {
+    const fetchLatestEmails = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/latest-emails');
+        setEmails(response.data);
+      } catch (error) {
+        console.error('Error fetching latest emails:', error);
+      }
+    };
+
+    fetchLatestEmails();
+  }, []);
 
   const extractSenderName = (sender) => {
     const match = sender.match(/^(.*?)\s*</);

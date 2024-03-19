@@ -1,16 +1,17 @@
-from flask import Flask, render_template, request, redirect, url_for, make_response
+from flask import Flask, render_template, request, redirect, url_for, make_response, jsonify
 import email_archiver
 import sqlite3
 from dateutil import parser
 import threading
 from dotenv import load_dotenv
 from email_archiver import initialize_database
+from flask_cors import CORS
 
 # Load environment variables from .env file
 load_dotenv()
 
 app = Flask(__name__)
-
+CORS(app)  # Enable CORS for all routes and origins
 
 @app.template_filter('format_date')
 def format_date(date_str):
@@ -44,6 +45,30 @@ def index():
 
     return render_template('index.html', latest_emails=latest_emails, total_emails=total_emails,
                            total_accounts=total_accounts, total_attachments=total_attachments)
+
+
+@app.route('/latest-emails')
+def latest_emails():
+    conn = sqlite3.connect('email_archive.db')
+    cursor = conn.cursor()
+
+    # Fetch the latest archived emails
+    cursor.execute("SELECT subject, sender, date FROM emails ORDER BY date DESC LIMIT 10")
+    latest_emails = cursor.fetchall()
+
+    conn.close()
+
+    # Format the latest emails as a list of dictionaries
+    emails_data = [
+        {
+            'subject': email[0],
+            'sender': email[1],
+            'date': format_date(email[2])
+        }
+        for email in latest_emails
+    ]
+
+    return jsonify(emails_data)
 
 @app.route('/create_account', methods=['GET', 'POST'])
 def create_account():
