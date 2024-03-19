@@ -186,6 +186,22 @@ function LoginRegisterPage() {
                   >
                       Forgot Password?
                   </RouterLink>
+									  {/* Add this block for the direct Dashboard link */}
+  <RouterLink 
+    to="/dashboard" 
+    style={{ 
+        marginLeft: '20px', // Adjust as needed for spacing
+        color: 'white', 
+        textDecoration: 'none', 
+        borderBottom: '1px solid transparent', 
+        transition: 'border-bottom 0.2s ease'
+    }}
+    onMouseOver={(e) => e.currentTarget.style.textDecoration = 'underline'}
+    onMouseOut={(e) => e.currentTarget.style.textDecoration = 'none'}
+  >
+      Go to Dashboard
+  </RouterLink>
+  {/* End of Dashboard link block */}
                 </Typography>
               )}
             </form>

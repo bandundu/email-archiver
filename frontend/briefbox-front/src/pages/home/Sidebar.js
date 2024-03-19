@@ -12,18 +12,25 @@ import {
   IconButton,
   Divider,
 } from "@mui/material";
+import { styled, useTheme } from "@mui/material/styles";
 import MailIcon from "@mui/icons-material/Mail";
 import HomeIcon from "@mui/icons-material/Home";
 import InfoIcon from "@mui/icons-material/Info";
 import SettingsIcon from "@mui/icons-material/Settings";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import { styled, useTheme, Theme, CSSObject } from "@mui/material/styles";
+import InboxIcon from "@mui/icons-material/Inbox";
+import SendIcon from "@mui/icons-material/Send";
+import DeleteIcon from "@mui/icons-material/Delete";
+import ReportIcon from "@mui/icons-material/Report";
+import PeopleIcon from "@mui/icons-material/People";
+import HelpIcon from "@mui/icons-material/Help";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 
 const drawerWidth = 240;
 const collapsedDrawerWidth = 64;
 
-const openedMixin = (theme: Theme): CSSObject => ({
+const openedMixin = (theme) => ({
   width: drawerWidth,
   transition: theme.transitions.create("width", {
     easing: theme.transitions.easing.sharp,
@@ -33,7 +40,7 @@ const openedMixin = (theme: Theme): CSSObject => ({
   backgroundColor: "black",
 });
 
-const closedMixin = (theme: Theme): CSSObject => ({
+const closedMixin = (theme) => ({
   transition: theme.transitions.create("width", {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen,
@@ -78,6 +85,17 @@ const StyledDrawer = styled(MuiDrawer, {
   }),
 }));
 
+const Wiggle = styled("div")({
+  animation: "$wiggle 0.5s ease-in-out",
+  "@keyframes wiggle": {
+    "0%": { transform: "rotate(0deg)" },
+    "25%": { transform: "rotate(5deg)" },
+    "50%": { transform: "rotate(0deg)" },
+    "75%": { transform: "rotate(-5deg)" },
+    "100%": { transform: "rotate(0deg)" },
+  },
+});
+
 function Sidebar({ isOpen, toggleDrawer }) {
   const theme = useTheme();
 
@@ -101,74 +119,94 @@ function Sidebar({ isOpen, toggleDrawer }) {
             </>
           )}
           <IconButton onClick={toggleDrawer} sx={{ color: "white", marginLeft: "auto" }}>
-            {theme.direction === "rtl" ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+            {isOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
           </IconButton>
         </Toolbar>
       </DrawerHeader>
-      <Divider />
+      <Divider sx={{ bgcolor: 'grey', marginLeft: 4, marginRight: 4 }} />
       <List>
-        {["Archive", "Mail Accounts", "Settings"].map((text, index) => (
-          <ListItem key={text} disablePadding sx={{ display: "block" }}>
+        {[
+          { text: "Dashboard", icon: <HomeIcon />, disabled: false },
+          { text: "Accounts", icon: <AccountCircleIcon />, disabled: false },
+          { text: "Inbox", icon: <InboxIcon />, disabled: true },
+          { text: "Sent", icon: <SendIcon />, disabled: true },
+          { text: "Archive", icon: <MailIcon />, disabled: true },
+          { text: "Trash", icon: <DeleteIcon />, disabled: true },
+          { text: "Spam", icon: <ReportIcon />, disabled: true },
+          { text: "Contacts", icon: <PeopleIcon />, disabled: true },
+          { text: "Settings", icon: <SettingsIcon />, disabled: true },
+        ].map((item) => (
+          <ListItem key={item.text} disablePadding sx={{ display: "block" }}>
             <ListItemButton
               sx={{
                 minHeight: 48,
                 justifyContent: isOpen ? "initial" : "center",
-                px: 2.5,
+                px: 1.5,
+                color: item.disabled ? "grey" : "white",
+                pointerEvents: item.disabled ? "none" : "auto",
               }}
             >
               <ListItemIcon
                 sx={{
                   minWidth: 0,
-                  mr: isOpen ? 3 : "auto",
+                  mr: isOpen ? -1: "auto",
                   justifyContent: "center",
-                  color: "white",
+                  color: item.disabled ? "grey" : "white",
                   width: collapsedDrawerWidth,
                 }}
               >
-                {index === 0 ? (
-                  <HomeIcon />
-                ) : index === 1 ? (
-                  <InfoIcon />
-                ) : (
-                  <SettingsIcon />
-                )}
+                {isOpen ? <Wiggle>{item.icon}</Wiggle> : item.icon}
               </ListItemIcon>
-              <ListItemText primary={text} sx={{ opacity: isOpen ? 1 : 0 }} />
+              <ListItemText primary={item.text} sx={{ opacity: isOpen ? 1 : 0,  marginTop: '-2px'}} />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+      <Divider sx={{ bgcolor: 'grey', marginLeft: 4, marginRight: 4 }} />
+      <List>
+        {[
+          { text: "Help", icon: <HelpIcon />, disabled: true },
+          { text: "About", icon: <InfoIcon />, disabled: true },
+        ].map((item) => (
+          <ListItem key={item.text} disablePadding sx={{ display: "block" }}>
+            <ListItemButton
+              sx={{
+                minHeight: 48,
+                justifyContent: isOpen ? "initial" : "center",
+                px: 1.5,
+                color: item.disabled ? "grey" : "white",
+                pointerEvents: item.disabled ? "none" : "auto",
+              }}
+            >
+              <ListItemIcon
+                sx={{
+                  minWidth: 0,
+                  mr: isOpen ? -1: "auto",
+                  justifyContent: "center",
+                  color: item.disabled ? "grey" : "white",
+                  width: collapsedDrawerWidth,
+                }}
+              >
+                {isOpen ? <Wiggle>{item.icon}</Wiggle> : item.icon}
+              </ListItemIcon>
+              <ListItemText primary={item.text} sx={{ opacity: isOpen ? 1 : 0 ,  marginTop: '-2px', }} />
             </ListItemButton>
           </ListItem>
         ))}
       </List>
       <Divider />
-      <div
-        style={{
-          marginTop: "auto",
-          padding: "10px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: isOpen ? "flex-start" : "center",
-        }}
-      >
-        <Avatar
-          sx={{
-            height: 30,
-            width: 30,
-            bgcolor: "secondary.main",
-            marginRight: isOpen ? "8px" : 0,
-          }}
-          alt="Sharp Looking Dude"
-          src="https://media.licdn.com/dms/image/C4D03AQGu8t9FRzpqFA/profile-displayphoto-shrink_200_200/0/1591779829173?e=2147483647&v=beta&t=bkEDi5qNuyusHExvviGC9nhqAhIY_sPON8TXqDdxDqQ"
-        />
-        {isOpen && (
-          <Typography variant="body1" sx={{ color: "white" }}>
-            davidmupende@gmail.com
-          </Typography>
-        )}
-      </div>
-      {isOpen && (
-        <Typography variant="caption" sx={{ textAlign: "center", color: "grey" }}>
-          © 2024 BriefBox by Charles David Mupende
-        </Typography>
-      )}
+  <div style={{ 
+    marginTop: 'auto', 
+    width: '100%', 
+    paddingBottom: theme.spacing(2), // use theme.spacing for consistent padding
+    backgroundColor: 'black' // to match your Drawer's background color
+  }}>
+    {isOpen && (
+      <Typography variant="caption" sx={{ textAlign: "center", color: "grey" }}>
+        Made with ❤️ by Charles D. Mupende
+      </Typography>
+    )}
+  </div>
     </StyledDrawer>
   );
 }
