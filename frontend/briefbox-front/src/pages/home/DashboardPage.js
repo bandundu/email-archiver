@@ -19,8 +19,19 @@ function DashboardPage() {
   };
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", backgroundColor: "#000000" }}>
-      <AppBar position="static" sx={{ backgroundColor: "#000000" }} elevation={0}>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        minHeight: "100vh",
+        backgroundColor: "#000000",
+      }}
+    >
+      <AppBar
+        position="static"
+        sx={{ backgroundColor: "#000000" }}
+        elevation={0}
+      >
         <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <IconButton
@@ -63,12 +74,27 @@ function DashboardPage() {
         ) : (
           <Sidebar isOpen={isOpen} toggleDrawer={toggleDrawer} />
         )}
-        <Box component="main" sx={{ flexGrow: 1, padding: "24px", backgroundColor: "#1c1c1c", display: "flex", flexDirection: isMobile ? "column" : "row" }}>
-          <Box sx={{ flexGrow: 1, marginRight: isMobile ? 0 : "24px", marginBottom: isMobile ? "24px" : 0 }}>
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            padding: "24px",
+            backgroundColor: "#000000",
+            display: "flex",
+            flexDirection: isMobile ? "column" : "row",
+          }}
+        >
+          <Box
+            sx={{
+              flexGrow: 1,
+              marginRight: isMobile ? 0 : "20px",
+              marginBottom: isMobile ? "20px" : 0,
+            }}
+          >
             <Typography variant="h4" sx={{ color: "white" }}>
               BriefBox 📨
             </Typography>
-            <Typography variant="caption" sx={{ color: "white" }}>
+            <Typography variant="subtitle" sx={{ color: "white" }}>
               Where Memories Live Beyond the Inbox.
             </Typography>
             <LatestArchivedEmails />

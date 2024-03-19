@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  Avatar,
   Drawer as MuiDrawer,
   List,
   ListItem,
@@ -28,7 +27,7 @@ import HelpIcon from "@mui/icons-material/Help";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 
 const drawerWidth = 240;
-const collapsedDrawerWidth = 64;
+const collapsedDrawerWidth = 56;
 
 const openedMixin = (theme) => ({
   width: drawerWidth,
@@ -106,24 +105,32 @@ function Sidebar({ isOpen, toggleDrawer }) {
           sx={{
             display: "flex",
             alignItems: "center",
-            justifyContent: isOpen ? "flex-start" : "center",
             px: [1],
+            flexGrow: 1,
           }}
         >
           {isOpen && (
-            <>
-              <MailIcon sx={{ marginRight: "8px", color: "white" }} />
-              <Typography variant="h6" sx={{ color: "white" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexGrow: 1,
+              }}
+            >
+              <MailIcon sx={{ color: "white", mr: 2 }} />{" "}
+              {/* Add margin-right */}
+              <Typography variant="h6" sx={{ color: "white", marginTop: 0.2 }}>
                 BriefBox
               </Typography>
-            </>
+            </div>
           )}
-          <IconButton onClick={toggleDrawer} sx={{ color: "white", marginLeft: "auto" }}>
+          <IconButton onClick={toggleDrawer} sx={{ color: "white" }}>
             {isOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
           </IconButton>
         </Toolbar>
       </DrawerHeader>
-      <Divider sx={{ bgcolor: 'grey', marginLeft: 4, marginRight: 4 }} />
+      <Divider sx={{ bgcolor: "grey", marginLeft: 4, marginRight: 4 }} />
       <List>
         {[
           { text: "Dashboard", icon: <HomeIcon />, disabled: false },
@@ -144,12 +151,14 @@ function Sidebar({ isOpen, toggleDrawer }) {
                 px: 1.5,
                 color: item.disabled ? "grey" : "white",
                 pointerEvents: item.disabled ? "none" : "auto",
+                display: "flex", // Add this line
+                alignItems: "center", // Add this line
               }}
             >
               <ListItemIcon
                 sx={{
                   minWidth: 0,
-                  mr: isOpen ? -1: "auto",
+                  mr: isOpen ? -1 : "auto",
                   justifyContent: "center",
                   color: item.disabled ? "grey" : "white",
                   width: collapsedDrawerWidth,
@@ -157,12 +166,15 @@ function Sidebar({ isOpen, toggleDrawer }) {
               >
                 {isOpen ? <Wiggle>{item.icon}</Wiggle> : item.icon}
               </ListItemIcon>
-              <ListItemText primary={item.text} sx={{ opacity: isOpen ? 1 : 0,  marginTop: '-2px'}} />
+              <ListItemText
+                primary={item.text}
+                sx={{ opacity: isOpen ? 1 : 0 }} // Remove marginTop
+              />
             </ListItemButton>
           </ListItem>
         ))}
       </List>
-      <Divider sx={{ bgcolor: 'grey', marginLeft: 4, marginRight: 4 }} />
+      <Divider sx={{ bgcolor: "grey", marginLeft: 4, marginRight: 4 }} />
       <List>
         {[
           { text: "Help", icon: <HelpIcon />, disabled: true },
@@ -176,12 +188,14 @@ function Sidebar({ isOpen, toggleDrawer }) {
                 px: 1.5,
                 color: item.disabled ? "grey" : "white",
                 pointerEvents: item.disabled ? "none" : "auto",
+                display: "flex", // Add this line
+                alignItems: "center", // Add this line
               }}
             >
               <ListItemIcon
                 sx={{
                   minWidth: 0,
-                  mr: isOpen ? -1: "auto",
+                  mr: isOpen ? -1 : "auto",
                   justifyContent: "center",
                   color: item.disabled ? "grey" : "white",
                   width: collapsedDrawerWidth,
@@ -189,24 +203,30 @@ function Sidebar({ isOpen, toggleDrawer }) {
               >
                 {isOpen ? <Wiggle>{item.icon}</Wiggle> : item.icon}
               </ListItemIcon>
-              <ListItemText primary={item.text} sx={{ opacity: isOpen ? 1 : 0 ,  marginTop: '-2px', }} />
+              <ListItemText
+                primary={item.text}
+                sx={{ opacity: isOpen ? 1 : 0 }} // Remove marginTop
+              />
             </ListItemButton>
           </ListItem>
         ))}
       </List>
-      <Divider />
-  <div style={{ 
-    marginTop: 'auto', 
-    width: '100%', 
-    paddingBottom: theme.spacing(2), // use theme.spacing for consistent padding
-    backgroundColor: 'black' // to match your Drawer's background color
-  }}>
-    {isOpen && (
-      <Typography variant="caption" sx={{ textAlign: "center", color: "grey" }}>
-        Made with ❤️ by Charles D. Mupende
-      </Typography>
-    )}
-  </div>
+      <div
+        style={{
+          marginTop: "auto",
+          width: "100%",
+          backgroundColor: "black",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {isOpen && (
+          <Typography variant="caption" sx={{ color: "grey", marginBottom: 1 }}>
+            Made with ❤️ by Charles D. Mupende
+          </Typography>
+        )}
+      </div>
     </StyledDrawer>
   );
 }
