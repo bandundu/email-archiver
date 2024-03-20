@@ -47,6 +47,31 @@ def index():
                            total_accounts=total_accounts, total_attachments=total_attachments)
 
 
+@app.route('/stats')
+def get_stats():
+    conn = sqlite3.connect('email_archive.db')
+    cursor = conn.cursor()
+
+    # Fetch summary statistics
+    cursor.execute("SELECT COUNT(*) FROM emails")
+    total_emails = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM accounts")
+    total_accounts = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM attachments")
+    total_attachments = cursor.fetchone()[0]
+
+    conn.close()
+
+    stats = {
+        'totalEmails': total_emails,
+        'totalAccounts': total_accounts,
+        'totalAttachments': total_attachments
+    }
+
+    return jsonify(stats)
+
 @app.route('/latest-emails')
 def latest_emails():
     conn = sqlite3.connect('email_archive.db')

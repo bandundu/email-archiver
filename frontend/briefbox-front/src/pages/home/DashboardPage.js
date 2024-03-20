@@ -78,31 +78,27 @@ function DashboardPage() {
           component="main"
           sx={{
             flexGrow: 1,
-            padding: "24px",
+            padding: "20px",
             backgroundColor: "#000000",
-            display: "flex",
-            flexDirection: isMobile ? "column" : "row",
           }}
         >
-          <Box
-            sx={{
-              flexGrow: 1,
-              marginRight: isMobile ? 0 : "20px",
-              marginBottom: isMobile ? "20px" : 0,
-            }}
-          >
-            <Typography variant="h4" sx={{ color: "white" }}>
-              BriefBox 📨
-            </Typography>
-            <Typography variant="subtitle" sx={{ color: "white" }}>
-              Where Memories Live Beyond the Inbox.
-            </Typography>
-            <LatestArchivedEmails />
-          </Box>
-          <Box sx={{ width: isMobile ? "100%" : "300px" }}>
-            <Statistics />
-            <FileUploadWidget />
-          </Box>
+          <Typography variant="h4" sx={{ color: "white" }}>
+            BriefBox 📨
+          </Typography>
+          <Typography variant="subtitle" sx={{ color: "white" }}>
+            Where Memories Live Beyond the Inbox.
+          </Typography>
+          <LatestArchivedEmails />
+          {isMobile && (
+            <Box sx={{ marginTop: "20px" }}>
+              <Statistics />
+            </Box>
+          )}
+          {!isMobile && (
+            <Box sx={{ marginTop: "20px", maxWidth: "300px" }}>
+              <Statistics />
+            </Box>
+          )}
         </Box>
       </Box>
     </Box>

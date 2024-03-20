@@ -17,7 +17,9 @@ function LatestArchivedEmails() {
   useEffect(() => {
     const fetchLatestEmails = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/latest-emails');
+        const response = await axios.get(
+          "http://192.168.0.112:5000/latest-emails"
+        );
         setEmails(response.data);
       } catch (error) {
         console.error('Error fetching latest emails:', error);
