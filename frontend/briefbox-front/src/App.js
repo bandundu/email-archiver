@@ -62,6 +62,22 @@ const theme = createTheme({
         },
       },
     },
+    MuiTypography: {
+      styleOverrides: {
+        root: {
+          color: "white", // Set default text color for Typography
+        },
+        variants: {
+          h4: {
+            color: "white", // Set text color for h4 variant
+          },
+          body1: {
+            color: "white", // Set text color for body1 variant
+          },
+          // Add more variants as needed
+        },
+      },
+    },
   },
 });
 
