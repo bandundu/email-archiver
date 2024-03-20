@@ -6,14 +6,11 @@ import LatestArchivedEmails from "./LatestArchivedEmails";
 
 const DashboardPage = () => {
   return (
-    <BaseLayout>
+    <BaseLayout
+      pageTitle="BriefBox 📨"
+      pageSubtitle="Where Memories Live Beyond the Inbox."
+    >
       <Box>
-        <Typography variant="h4" sx={{ color: "white" }}>
-          BriefBox 📨
-        </Typography>
-        <Typography variant="subtitle" sx={{ color: "white" }}>
-          Where Memories Live Beyond the Inbox.
-        </Typography>
         <LatestArchivedEmails />
         <Box sx={{ marginTop: "20px" }}>
           <Statistics />

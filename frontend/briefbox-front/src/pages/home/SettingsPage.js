@@ -14,16 +14,16 @@ import BaseLayout from "./BaseLayout";
 
 const SettingsPage = () => {
   return (
-    <BaseLayout>
+    <BaseLayout pageTitle="Settings">
       <Box sx={{ maxWidth: "600px" }}>
-        <Typography variant="h4" sx={{ marginBottom: "20px", color: "white" }}>
-          Settings
-        </Typography>
         <Box sx={{ marginBottom: "40px" }}>
           <Typography variant="h6" sx={{ marginBottom: "10px" }}>
             Account
           </Typography>
-          <Typography variant="body1" sx={{ marginBottom: "20px" }}>
+          <Typography
+            variant="body1"
+            sx={{ marginBottom: "20px", color: "grey" }}
+          >
             Here, you can update your account information such as your profile
             picture, name and username.
           </Typography>
@@ -97,7 +97,10 @@ const SettingsPage = () => {
           <Typography variant="h6" sx={{ marginBottom: "10px" }}>
             Security
           </Typography>
-          <Typography variant="body1" sx={{ marginBottom: "20px" }}>
+          <Typography
+            variant="body1"
+            sx={{ marginBottom: "20px", color: "grey" }}
+          >
             In this section, you can change your password and enable/disable
             two-factor authentication.
           </Typography>
@@ -167,7 +170,7 @@ const SettingsPage = () => {
             <AccordionDetails sx={{ backgroundColor: "#181c1c" }}>
               <Typography
                 variant="body1"
-                sx={{ marginBottom: "20px", color: "white" }}
+                sx={{ marginBottom: "20px", color: "grey" }}
               >
                 <strong>
                   Two-factor authentication is currently disabled.
@@ -189,7 +192,10 @@ const SettingsPage = () => {
           <Typography variant="h6" sx={{ marginBottom: "10px" }}>
             Profile
           </Typography>
-          <Typography variant="body1" sx={{ marginBottom: "20px" }}>
+          <Typography
+            variant="body1"
+            sx={{ marginBottom: "20px", color: "grey" }}
+          >
             Here, you can update your profile to customize and personalize your
             experience.
           </Typography>
@@ -199,7 +205,10 @@ const SettingsPage = () => {
           <Typography variant="h6" sx={{ marginBottom: "10px" }}>
             OpenAI Integration
           </Typography>
-          <Typography variant="body1" sx={{ marginBottom: "20px" }}>
+          <Typography
+            variant="body1"
+            sx={{ marginBottom: "20px", color: "grey" }}
+          >
             You can make use of the OpenAI API to help you generate content, or
             improve your writing while composing your resume.
           </Typography>
@@ -209,7 +218,10 @@ const SettingsPage = () => {
           <Typography variant="h6" sx={{ marginBottom: "10px" }}>
             Danger Zone
           </Typography>
-          <Typography variant="body1" sx={{ marginBottom: "20px" }}>
+          <Typography
+            variant="body1"
+            sx={{ marginBottom: "20px", color: "grey" }}
+          >
             In this section, you can delete your account and all the data
             associated to your user, but please keep in mind that{" "}
             <strong>this action is irreversible</strong>.
