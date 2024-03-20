@@ -11,7 +11,8 @@ from flask_cors import CORS
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes and origins
+#CORS(app)  # Enable CORS for all routes and origins
+cors = CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "http://192.168.0.112:3000"]}})
 
 @app.template_filter('format_date')
 def format_date(date_str):
@@ -98,20 +99,48 @@ def latest_emails():
 @app.route('/create_account', methods=['GET', 'POST'])
 def create_account():
     if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-        protocol = request.form['protocol']
-        server = request.form['server']
-        port = request.form['port']
+        # Check if the request content type is JSON
+        if request.is_json:
+            # Parse data as JSON
+            data = request.get_json()
+        else:
+            # Otherwise, treat it as form data
+            data = request.form
+
+        email = data.get('email')
+        password = data.get('password')
+        protocol = data.get('protocol')
+        server = data.get('server')
+        port = data.get('port')
+
+        # Validate the extracted data
+        if not all([email, password, protocol, server, port]):
+            # Respond with an error if any field is missing or the request is JSON
+            if request.is_json:
+                return jsonify({'error': 'Missing required fields'}), 400
+            else:
+                return render_template('create_account.html', error_message='Missing required fields')
+
         conn = sqlite3.connect('email_archive.db')
         try:
+            # Assume email_archiver.create_account function exists and handles the DB operations
             email_archiver.create_account(conn, email, password, protocol, server, port)
             conn.close()
-            return redirect(url_for('list_accounts'))
+            if request.is_json:
+                # For JSON requests, return a success response in JSON
+                return jsonify({'message': 'Account created successfully'}), 200
+            else:
+                # For form data requests, redirect as before
+                return redirect(url_for('list_accounts'))
         except sqlite3.IntegrityError:
             conn.close()
             error_message = f"An account with email '{email}' already exists. Please use a different email."
-            return render_template('create_account.html', error_message=error_message)
+            if request.is_json:
+                return jsonify({'error': error_message}), 400
+            else:
+                return render_template('create_account.html', error_message=error_message)
+
+    # For GET requests or other non-POST methods
     return render_template('create_account.html')
 
 @app.route('/list_accounts')
@@ -120,6 +149,23 @@ def list_accounts():
     accounts = email_archiver.read_accounts(conn)
     conn.close()
     return render_template('list_accounts.html', accounts=accounts)
+
+@app.route('/get_accounts', methods=['GET'])
+def get_accounts():
+    conn = sqlite3.connect('email_archive.db')
+    accounts = email_archiver.read_accounts(conn)
+    conn.close()
+
+    accounts_data = [
+        {
+            'id': account[0],
+            'email': account[1],
+            'protocol': account[3],
+        }
+        for account in accounts
+    ]
+
+    return jsonify(accounts_data)
 
 @app.route('/update_account/<int:account_id>', methods=['GET', 'POST'])
 def update_account(account_id):

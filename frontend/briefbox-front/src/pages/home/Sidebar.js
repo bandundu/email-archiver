@@ -141,7 +141,7 @@ function Sidebar({ isOpen, toggleDrawer }) {
       <List>
         {[
           { text: "Dashboard", icon: <HomeIcon />, disabled: false, link: "/dashboard" },
-          { text: "Accounts", icon: <AccountCircleIcon />, disabled: false },
+          { text: "Accounts", icon: <AccountCircleIcon />, disabled: false, link: "/accounts"},
           { text: "Inbox", icon: <InboxIcon />, disabled: true },
           { text: "Sent", icon: <SendIcon />, disabled: true },
           { text: "Archive", icon: <MailIcon />, disabled: true },

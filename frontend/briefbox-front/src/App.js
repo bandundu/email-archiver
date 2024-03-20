@@ -10,6 +10,7 @@ import AccountSetup from './pages/auth/AccountSetup';
 import ConfirmationPage from './pages/auth/ConfirmationPage';
 import PrivateRoute from './pages/auth/PrivateRoute'; // Import the PrivateRoute component this can be used to protect routes that require authentication
 import SettingsPage from "./pages/home/SettingsPage";
+import AccountsPage from "./pages/home/AccountsPage";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -100,6 +101,7 @@ function App() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/confirm-email" element={<ConfirmationPage />} />
+            <Route path="/accounts" element={<AccountsPage />} />
             {/* Define other routes here */}
           </Routes>
         </Router>
