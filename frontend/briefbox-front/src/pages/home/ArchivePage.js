@@ -77,42 +77,17 @@ const ArchivePage = () => {
   );
 
   return (
-    <BaseLayout pageTitle="Archive" pageSubtitle="View and manage archived emails">
-      <Box sx={{ marginBottom: "20px" }}>
-        <TextField
-          label="Search"
-          variant="outlined"
-          size="small"
-          value={searchQuery}
-          onChange={handleSearch}
-          InputProps={{
-            endAdornment: <SearchIcon />,
-            style: { color: "white" },
-          }}
-          InputLabelProps={{
-            style: { color: "grey" },
-          }}
-          sx={{
-            backgroundColor: "#0000001f",
-            borderRadius: 1,
-            marginRight: "10px",
-          }}
-        />
-        <Button
-          variant="outlined"
-          startIcon={<FilterListIcon />}
-          sx={{ borderColor: "grey", color: "white" }}
-        >
-          Filters
-        </Button>
-      </Box>
+    <BaseLayout
+      pageTitle="Archive"
+      pageSubtitle="View and manage archived emails"
+    >
       <TableContainer component={Paper}>
-        <Table>
+        <Table sx={{ backgroundColor: "black" }}>
           <TableHead>
             <TableRow>
               <TableCell padding="checkbox">
                 <Checkbox
-                  color="primary"
+                  color="secondary"
                   indeterminate={
                     selectedEmails.length > 0 &&
                     selectedEmails.length < emails.length

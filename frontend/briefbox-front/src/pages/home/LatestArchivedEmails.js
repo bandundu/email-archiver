@@ -38,20 +38,20 @@ function LatestArchivedEmails() {
     <TableContainer
       component={Paper}
       sx={{
-        marginTop: '24px',
-        backgroundColor: '#333',
-        color: 'white',
+        marginTop: "24px",
+        backgroundColor: "black",
+        color: "white",
       }}
     >
-      <Typography variant="h6" sx={{ padding: '16px' }}>
+      <Typography variant="h6" sx={{ padding: "16px" }}>
         Latest Archived Emails
       </Typography>
-      <Table>
+      <Table sx={{ backgroundColor: "black" }}>
         <TableHead>
           <TableRow>
-            <TableCell sx={{ color: 'white' }}>Subject</TableCell>
-            <TableCell sx={{ color: 'white' }}>Sender</TableCell>
-            <TableCell sx={{ color: 'white' }}>Date</TableCell>
+            <TableCell sx={{ color: "white" }}>Subject</TableCell>
+            <TableCell sx={{ color: "white" }}>Sender</TableCell>
+            <TableCell sx={{ color: "white" }}>Date</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -59,24 +59,24 @@ function LatestArchivedEmails() {
             <TableRow key={index}>
               <TableCell
                 sx={{
-                  wordBreak: 'break-word',
-                  maxWidth: '300px',
-                  color: 'white',
+                  wordBreak: "break-word",
+                  maxWidth: "300px",
+                  color: "white",
                 }}
               >
                 {email.subject}
               </TableCell>
               <TableCell
                 sx={{
-                  wordBreak: 'break-word',
-                  maxWidth: '200px',
-                  color: 'white',
+                  wordBreak: "break-word",
+                  maxWidth: "200px",
+                  color: "white",
                 }}
                 title={email.sender}
               >
                 {extractSenderName(email.sender)}
               </TableCell>
-              <TableCell sx={{ color: 'white' }}>{email.date}</TableCell>
+              <TableCell sx={{ color: "white" }}>{email.date}</TableCell>
             </TableRow>
           ))}
         </TableBody>

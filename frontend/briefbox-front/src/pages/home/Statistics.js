@@ -29,7 +29,7 @@ function Statistics() {
   }, []);
 
   return (
-    <Box sx={{ color: 'white', backgroundColor: '#333', padding: '16px', borderRadius: '4px' }}>
+    <Box sx={{ color: 'white', backgroundColor: 'black', padding: '16px', borderRadius: '4px' }}>
       <Typography variant="h5" gutterBottom sx={{ color: "white" }}>
         Statistics
       </Typography>
