@@ -16,17 +16,13 @@ import { styled, useTheme } from "@mui/material/styles";
 import { Link as ReactRouterLink } from 'react-router-dom';
 import MailIcon from "@mui/icons-material/Mail";
 import HomeIcon from "@mui/icons-material/Home";
-import InfoIcon from "@mui/icons-material/Info";
 import SettingsIcon from "@mui/icons-material/Settings";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import InboxIcon from "@mui/icons-material/Inbox";
-import SendIcon from "@mui/icons-material/Send";
-import DeleteIcon from "@mui/icons-material/Delete";
-import ReportIcon from "@mui/icons-material/Report";
-import PeopleIcon from "@mui/icons-material/People";
-import HelpIcon from "@mui/icons-material/Help";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
+import GroupIcon from "@mui/icons-material/Group";
+import DescriptionIcon from "@mui/icons-material/Description";
 
 const drawerWidth = 240;
 const collapsedDrawerWidth = 56;
@@ -100,7 +96,6 @@ const Wiggle = styled("div")({
 function Sidebar({ isOpen, toggleDrawer }) {
   const theme = useTheme();
 
-  
   return (
     <StyledDrawer variant="permanent" open={isOpen}>
       <DrawerHeader>
@@ -110,7 +105,7 @@ function Sidebar({ isOpen, toggleDrawer }) {
             alignItems: "center",
             px: [1],
             flexGrow: 1,
-            justifyContent: "space-between", // Add this line
+            justifyContent: "space-between",
           }}
         >
           {isOpen && (
@@ -122,10 +117,9 @@ function Sidebar({ isOpen, toggleDrawer }) {
                 flexGrow: 1,
               }}
             >
-              <MailIcon sx={{ color: "white", mr: 2 }} />{" "}
-              {/* Add margin-right */}
+              <MailIcon sx={{ color: "white", mr: 2 }} />
               <Typography variant="h6" sx={{ color: "white", marginTop: 0.2 }}>
-                BriefBox
+                Briefbox
               </Typography>
             </div>
           )}
@@ -141,13 +135,9 @@ function Sidebar({ isOpen, toggleDrawer }) {
       <List>
         {[
           { text: "Dashboard", icon: <HomeIcon />, disabled: false, link: "/dashboard" },
-          { text: "Accounts", icon: <AccountCircleIcon />, disabled: false, link: "/accounts"},
-          { text: "Inbox", icon: <InboxIcon />, disabled: true },
-          { text: "Sent", icon: <SendIcon />, disabled: true },
-          { text: "Archive", icon: <MailIcon />, disabled: true },
-          { text: "Trash", icon: <DeleteIcon />, disabled: true },
-          { text: "Spam", icon: <ReportIcon />, disabled: true },
-          { text: "Contacts", icon: <PeopleIcon />, disabled: true },
+          { text: "Archive", icon: <MailIcon />, disabled: false, link: "/archive" },
+          { text: "Accounts", icon: <AccountCircleIcon />, disabled: false, link: "/accounts" },
+          { text: "Retention Rules", icon: <DeleteSweepIcon />, disabled: true, link: "/retention-rules" },
         ].map((item) => (
           <ListItem key={item.text} disablePadding sx={{ display: "block" }}>
             <ListItemButton
@@ -157,12 +147,12 @@ function Sidebar({ isOpen, toggleDrawer }) {
                 minHeight: 48,
                 justifyContent: isOpen ? "initial" : "center",
                 px: 1.5,
-                color: item.disabled ? "grey" : "white", // Apply color here
+                color: item.disabled ? "grey" : "white",
                 pointerEvents: item.disabled ? "none" : "auto",
                 display: "flex",
                 alignItems: "center",
                 "& .MuiListItemText-primary": {
-                  color: item.disabled ? "grey" : "white", // Apply color to text
+                  color: item.disabled ? "grey" : "white",
                 },
               }}
             >
@@ -188,9 +178,9 @@ function Sidebar({ isOpen, toggleDrawer }) {
       <Divider sx={{ bgcolor: "grey", marginLeft: 4, marginRight: 4 }} />
       <List>
         {[
-          { text: "Settings", icon: <SettingsIcon />, disabled: false, link: "/settings" },
-          { text: "Help", icon: <HelpIcon />, disabled: true },
-          { text: "About", icon: <InfoIcon />, disabled: true },
+          { text: "Settings", icon: <SettingsIcon />, disabled: true, link: "/settings" },
+          { text: "Users & Groups", icon: <GroupIcon />, disabled: true, link: "/users-groups" },
+          { text: "Protocols", icon: <DescriptionIcon />, disabled: true, link: "/protocols" },
         ].map((item) => (
           <ListItem key={item.text} disablePadding sx={{ display: "block" }}>
             <ListItemButton
@@ -200,12 +190,12 @@ function Sidebar({ isOpen, toggleDrawer }) {
                 minHeight: 48,
                 justifyContent: isOpen ? "initial" : "center",
                 px: 1.5,
-                color: item.disabled ? "grey" : "white", // Apply color here
+                color: item.disabled ? "grey" : "white",
                 pointerEvents: item.disabled ? "none" : "auto",
                 display: "flex",
                 alignItems: "center",
                 "& .MuiListItemText-primary": {
-                  color: item.disabled ? "grey" : "white", // Apply color to text
+                  color: item.disabled ? "grey" : "white",
                 },
               }}
             >
@@ -240,7 +230,7 @@ function Sidebar({ isOpen, toggleDrawer }) {
       >
         {isOpen && (
           <Typography variant="caption" sx={{ color: "grey", marginBottom: 1 }}>
-            Made with ❤️ by Charles D. Mupende
+            Made with ❤️ by Charles
           </Typography>
         )}
       </div>

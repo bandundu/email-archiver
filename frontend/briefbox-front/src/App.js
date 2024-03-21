@@ -8,9 +8,11 @@ import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 import AccountSetup from './pages/auth/AccountSetup';
 import ConfirmationPage from './pages/auth/ConfirmationPage';
-import PrivateRoute from './pages/auth/PrivateRoute'; // Import the PrivateRoute component this can be used to protect routes that require authentication
+import PrivateRoute from './pages/auth/PrivateRoute';
 import SettingsPage from "./pages/home/SettingsPage";
 import AccountsPage from "./pages/home/AccountsPage";
+import ArchivePage from "./pages/home/ArchivePage";
+import RetentionRulesPage from "./pages/home/RetentionRulesPage";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -92,7 +94,8 @@ function App() {
       <AnimatePresence mode="wait">
         <Router>
           <Routes>
-            <Route path="/" element={<LoginPage />} />
+            {/*<Route path="/" element={<LoginPage />} />*/}
+            <Route path="/" element={<DashboardPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -102,6 +105,8 @@ function App() {
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/confirm-email" element={<ConfirmationPage />} />
             <Route path="/accounts" element={<AccountsPage />} />
+            <Route path="/archive" element={<ArchivePage />} />
+            <Route path="/retention-rules" element={<RetentionRulesPage />} />
             {/* Define other routes here */}
           </Routes>
         </Router>

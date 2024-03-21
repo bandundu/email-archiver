@@ -3,3 +3,5 @@
 .env
 __pycache__
 tests
+frontend/briefbox-front/src/pages/dump_files.py
+frontend/briefbox-front/src/pages/output.txt
