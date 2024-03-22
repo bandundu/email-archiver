@@ -17,6 +17,7 @@
     "react-beautiful-dnd": "^13.1.1",
     "react-dom": "^18.2.0",
     "react-dropzone": "^14.2.3",
+    "react-intersection-observer": "^9.8.1",
     "react-pro-sidebar": "^1.1.0",
     "react-router-dom": "^6.21.3",
     "react-scripts": "5.0.1",

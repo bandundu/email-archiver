@@ -12,6 +12,7 @@ import PrivateRoute from './pages/auth/PrivateRoute';
 import SettingsPage from "./pages/home/SettingsPage";
 import AccountsPage from "./pages/home/AccountsPage";
 import ArchivePage from "./pages/home/ArchivePage";
+import EmailDetailsPage from "./pages/home/EmailDetailsPage";
 import RetentionRulesPage from "./pages/home/RetentionRulesPage";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { AnimatePresence, motion } from "framer-motion";
@@ -103,6 +104,10 @@ function App() {
             <Route path="/account-setup" element={<AccountSetup />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route
+              path="/email-details/:emailId"
+              element={<EmailDetailsPage />}
+            />
             <Route path="/confirm-email" element={<ConfirmationPage />} />
             <Route path="/accounts" element={<AccountsPage />} />
             <Route path="/archive" element={<ArchivePage />} />

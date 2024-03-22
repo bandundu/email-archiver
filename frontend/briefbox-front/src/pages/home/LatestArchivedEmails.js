@@ -38,7 +38,6 @@ function LatestArchivedEmails() {
     <TableContainer
       component={Paper}
       sx={{
-        marginTop: "24px",
         backgroundColor: "black",
         color: "white",
       }}

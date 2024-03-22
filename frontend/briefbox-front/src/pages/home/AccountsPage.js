@@ -5,22 +5,17 @@ import {
   TextField,
   Button,
   IconButton,
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
+  Card,
+  CardContent,
+  CardActions,
+  Collapse,
   MenuItem,
 } from "@mui/material";
 import { motion } from "framer-motion";
 import BaseLayout from "./BaseLayout";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import axios from "axios";
 
 const AccountsPage = () => {
@@ -34,8 +29,7 @@ const AccountsPage = () => {
   });
   const [showAddAccountForm, setShowAddAccountForm] = useState(false);
   const [editAccountId, setEditAccountId] = useState(null);
-  const [openDeleteConfirmation, setOpenDeleteConfirmation] = useState(false);
-  const [accountToDelete, setAccountToDelete] = useState(null);
+  const [expandedAccountId, setExpandedAccountId] = useState(null);
 
   useEffect(() => {
     fetchAccounts();
@@ -77,6 +71,7 @@ const AccountsPage = () => {
   const handleEditAccount = (account) => {
     setEditAccountId(account.id);
     setNewAccount({ ...account });
+    setExpandedAccountId(account.id);
   };
 
   const handleUpdateAccount = async () => {
@@ -104,37 +99,27 @@ const AccountsPage = () => {
     }
   };
 
-  const handleDeleteAccount = async () => {
+  const handleDeleteAccount = async (accountId) => {
     try {
       const response = await axios.post(
-        `http://192.168.0.112:5000/delete_account/${accountToDelete.id}`
+        `http://192.168.0.112:5000/delete_account/${accountId}`
       );
       if (response.status === 200) {
-        const updatedAccounts = accounts.filter(
-          (acc) => acc.id !== accountToDelete.id
-        );
+        const updatedAccounts = accounts.filter((acc) => acc.id !== accountId);
         setAccounts(updatedAccounts);
-        setOpenDeleteConfirmation(false);
-        setAccountToDelete(null);
       }
     } catch (error) {
       console.error("Error deleting account:", error);
     }
   };
 
-  const handleOpenDeleteConfirmation = (account) => {
-    setAccountToDelete(account);
-    setOpenDeleteConfirmation(true);
-  };
-
-  const handleCloseDeleteConfirmation = () => {
-    setOpenDeleteConfirmation(false);
-    setAccountToDelete(null);
+  const handleExpandClick = (accountId) => {
+    setExpandedAccountId(expandedAccountId === accountId ? null : accountId);
   };
 
   return (
     <BaseLayout pageTitle="Accounts" pageSubtitle="Manage your email accounts">
-      <Box sx={{ maxWidth: "800px" }}>
+      <Box>
         <Box
           sx={{
             display: "flex",
@@ -250,76 +235,66 @@ const AccountsPage = () => {
         <Typography variant="h6" sx={{ marginBottom: "10px" }}>
           Existing Accounts
         </Typography>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ color: "white" }}>ID</TableCell>
-              <TableCell sx={{ color: "white" }}>Email</TableCell>
-              <TableCell sx={{ color: "white" }}>Protocol</TableCell>
-              <TableCell sx={{ color: "white" }}>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {accounts.length > 0 ? (
-              accounts.map((account) => (
-                <TableRow key={account.id}>
-                  <TableCell sx={{ color: "white" }}>{account.id}</TableCell>
-                  <TableCell sx={{ color: "white" }}>{account.email}</TableCell>
-                  <TableCell sx={{ color: "white" }}>
-                    {account.protocol}
-                  </TableCell>
-                  <TableCell>
-                    <IconButton
-                      edge="end"
-                      aria-label="edit"
-                      onClick={() => handleEditAccount(account)}
-                    >
-                      <EditIcon sx={{ color: "white" }} />
-                    </IconButton>
-                    <IconButton
-                      edge="end"
-                      aria-label="delete"
-                      onClick={() => handleOpenDeleteConfirmation(account)}
-                    >
-                      <DeleteIcon sx={{ color: "white" }} />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={4} align="center" sx={{ color: "white" }}>
-                  No accounts found
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+        {accounts.length > 0 ? (
+          accounts.map((account) => (
+            <Card
+              key={account.id}
+              sx={{ marginBottom: "10px", backgroundColor: "#242423" }}
+            >
+              <CardContent>
+                <Typography variant="h6" sx={{ color: "white" }}>
+                  {account.email}
+                </Typography>
+                <Typography variant="subtitle1" sx={{ color: "#bdbdbd" }}>
+                  Protocol: {account.protocol}
+                </Typography>
+              </CardContent>
+              <CardActions>
+                <IconButton
+                  edge="end"
+                  aria-label="edit"
+                  onClick={() => handleEditAccount(account)}
+                >
+                  <EditIcon sx={{ color: "white" }} />
+                </IconButton>
+                <IconButton
+                  edge="end"
+                  aria-label="delete"
+                  onClick={() => handleDeleteAccount(account.id)}
+                >
+                  <DeleteIcon sx={{ color: "white" }} />
+                </IconButton>
+                <IconButton
+                  edge="end"
+                  aria-label="expand"
+                  onClick={() => handleExpandClick(account.id)}
+                  aria-expanded={expandedAccountId === account.id}
+                >
+                  <ExpandMoreIcon sx={{ color: "white" }} />
+                </IconButton>
+              </CardActions>
+              <Collapse
+                in={expandedAccountId === account.id}
+                timeout="auto"
+                unmountOnExit
+              >
+                <CardContent>
+                  <Typography variant="body1" sx={{ color: "#bdbdbd" }}>
+                    Server: {account.server}
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: "#bdbdbd" }}>
+                    Port: {account.port}
+                  </Typography>
+                </CardContent>
+              </Collapse>
+            </Card>
+          ))
+        ) : (
+          <Typography variant="body1" align="center" sx={{ color: "white" }}>
+            No accounts found
+          </Typography>
+        )}
       </Box>
-      <Dialog
-        open={openDeleteConfirmation}
-        onClose={handleCloseDeleteConfirmation}
-        aria-labelledby="delete-confirmation-dialog"
-        aria-describedby="delete-confirmation-dialog-description"
-      >
-        <DialogTitle id="delete-confirmation-dialog">
-          Delete Account
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText id="delete-confirmation-dialog-description">
-            Are you sure you want to delete account "{accountToDelete?.email}"?
-            This action is irreversible.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDeleteConfirmation} color="primary">
-            Cancel
-          </Button>
-          <Button onClick={handleDeleteAccount} color="secondary" autoFocus>
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
     </BaseLayout>
   );
 };

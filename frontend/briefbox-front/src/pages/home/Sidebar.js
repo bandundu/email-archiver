@@ -134,10 +134,30 @@ function Sidebar({ isOpen, toggleDrawer }) {
       <Divider sx={{ bgcolor: "grey", marginLeft: 4, marginRight: 4 }} />
       <List>
         {[
-          { text: "Dashboard", icon: <HomeIcon />, disabled: false, link: "/dashboard" },
-          { text: "Archive", icon: <MailIcon />, disabled: false, link: "/archive" },
-          { text: "Accounts", icon: <AccountCircleIcon />, disabled: false, link: "/accounts" },
-          { text: "Retention Rules", icon: <DeleteSweepIcon />, disabled: true, link: "/retention-rules" },
+          {
+            text: "Dashboard",
+            icon: <HomeIcon />,
+            disabled: false,
+            link: "/dashboard",
+          },
+          {
+            text: "Archive",
+            icon: <MailIcon />,
+            disabled: false,
+            link: "/archive",
+          },
+          {
+            text: "Accounts",
+            icon: <AccountCircleIcon />,
+            disabled: false,
+            link: "/accounts",
+          },
+          {
+            text: "Retention Rules",
+            icon: <DeleteSweepIcon />,
+            disabled: true,
+            link: "/retention-rules",
+          },
         ].map((item) => (
           <ListItem key={item.text} disablePadding sx={{ display: "block" }}>
             <ListItemButton
@@ -178,9 +198,24 @@ function Sidebar({ isOpen, toggleDrawer }) {
       <Divider sx={{ bgcolor: "grey", marginLeft: 4, marginRight: 4 }} />
       <List>
         {[
-          { text: "Settings", icon: <SettingsIcon />, disabled: true, link: "/settings" },
-          { text: "Users & Groups", icon: <GroupIcon />, disabled: true, link: "/users-groups" },
-          { text: "Protocols", icon: <DescriptionIcon />, disabled: true, link: "/protocols" },
+          {
+            text: "Settings",
+            icon: <SettingsIcon />,
+            disabled: false,
+            link: "/settings",
+          },
+          {
+            text: "Users & Groups",
+            icon: <GroupIcon />,
+            disabled: true,
+            link: "/users-groups",
+          },
+          {
+            text: "Protocols",
+            icon: <DescriptionIcon />,
+            disabled: true,
+            link: "/protocols",
+          },
         ].map((item) => (
           <ListItem key={item.text} disablePadding sx={{ display: "block" }}>
             <ListItemButton

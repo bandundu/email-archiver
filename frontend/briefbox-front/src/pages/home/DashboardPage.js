@@ -11,10 +11,8 @@ const DashboardPage = () => {
       pageSubtitle="Where Memories Live Beyond the Inbox."
     >
       <Box>
+        <Statistics />
         <LatestArchivedEmails />
-        <Box sx={{ marginTop: "20px" }}>
-          <Statistics />
-        </Box>
       </Box>
     </BaseLayout>
   );

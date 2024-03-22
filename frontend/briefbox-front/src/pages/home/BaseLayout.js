@@ -39,29 +39,25 @@ const BaseLayout = ({ children, pageTitle, pageSubtitle }) => {
         elevation={0}
       >
         <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
-          <Box sx={{ display: "flex", alignItems: "center" }}>
+          <Box sx={{ display: "flex", alignItems: "center", flex: 1 }}>
             <IconButton
               color="inherit"
-              aria-label="ChevronRight"
+              aria-label="open drawer"
               onClick={toggleDrawer}
               sx={{ color: "white", marginRight: 1 }}
             >
               <MenuIcon />
             </IconButton>
           </Box>
-          <SearchBar />
-          <Avatar
-            sx={{
-              height: 30,
-              width: 30,
-              bgcolor: "secondary.main",
-              marginLeft: 1,
-            }}
-            alt="Sharp Looking Dude"
-            src="https://media.licdn.com/dms/image/C4D03AQGu8t9FRzpqFA/profile-displayphoto-shrink_200_200/0/1591779829173?e=2147483647&v=beta&t=bkEDi5qNuyusHExvviGC9nhqAhIY_sPON8TXqDdxDqQ"
-          />
+          <Box sx={{ display: "flex", justifyContent: "center", flex: 1 }}>
+            <SearchBar />
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", flex: 1 }}>
+            {/* Place elements on the right side here, if any */}
+          </Box>
         </Toolbar>
       </AppBar>
+
       <Box sx={{ display: "flex", flexGrow: 1 }}>
         {isMobile ? (
           <Drawer
@@ -84,7 +80,7 @@ const BaseLayout = ({ children, pageTitle, pageSubtitle }) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
+          transition={{ duration: 0.25 }}
           style={{ flex: 1, display: "flex", flexDirection: "column" }}
         >
           <Box
@@ -114,7 +110,7 @@ const BaseLayout = ({ children, pageTitle, pageSubtitle }) => {
                   initial={{ x: -100, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   exit={{ x: 100, opacity: 0 }}
-                  transition={{ duration: 0.25, delay: 0.18 }}
+                  transition={{ duration: 0.3, delay: 0.2 }}
                 >
                   <Typography variant="subtitle1" sx={{ color: "white" }}>
                     {pageSubtitle}

@@ -1,0 +1,348 @@
+import React, { useState, useEffect, useRef } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  Box,
+  Typography,
+  useMediaQuery,
+  IconButton,
+  Drawer,
+  Button,
+  Fade,
+} from "@mui/material";
+import { motion, AnimatePresence } from "framer-motion";
+import BaseLayout from "./BaseLayout";
+import CloseIcon from "@mui/icons-material/Close";
+import axios from "axios";
+
+const EmailDetailsPage = () => {
+  const { emailId } = useParams();
+  const navigate = useNavigate();
+  const [email, setEmail] = useState(null);
+  const [attachments, setAttachments] = useState([]);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [currentEmailIndex, setCurrentEmailIndex] = useState(0);
+  const [totalEmails, setTotalEmails] = useState(0);
+  const emailContentRef = useRef(null);
+
+  const isMobile = useMediaQuery("(max-width:900px)");
+
+  useEffect(() => {
+    fetchEmailDetails();
+  }, [emailId]);
+
+  useEffect(() => {
+    const handleKeyPress = (event) => {
+      if (event.key === "ArrowLeft") {
+        handlePreviousEmail();
+      } else if (event.key === "ArrowRight") {
+        handleNextEmail();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyPress);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyPress);
+    };
+  }, [currentEmailIndex, totalEmails]);
+
+  const fetchEmailDetails = async () => {
+    try {
+      const response = await axios.get(
+        `http://192.168.0.112:5000/email_details/${emailId}`
+      );
+      setEmail(response.data.email);
+      setAttachments(response.data.attachments);
+
+      const totalEmailsResponse = await axios.get(
+        "http://192.168.0.112:5000/emails",
+        {
+          params: {
+            page: 1,
+            per_page: 1,
+          },
+        }
+      );
+      setTotalEmails(totalEmailsResponse.data.total_emails);
+      setCurrentEmailIndex(parseInt(emailId));
+    } catch (error) {
+      console.error("Error fetching email details:", error);
+    }
+  };
+
+  const handlePreviousEmail = () => {
+    if (currentEmailIndex > 1) {
+      const previousEmailId = currentEmailIndex - 1;
+      setCurrentEmailIndex(previousEmailId);
+      navigate(`/email-details/${previousEmailId}`);
+    }
+  };
+
+  const handleNextEmail = () => {
+    if (currentEmailIndex < totalEmails) {
+      const nextEmailId = currentEmailIndex + 1;
+      setCurrentEmailIndex(nextEmailId);
+      navigate(`/email-details/${nextEmailId}`);
+    }
+  };
+
+  const renderEmailContent = () => {
+    if (!email) return null;
+
+    const { body, content_type } = email;
+
+    const emailContentStyle = {
+      backgroundColor: "#1e1e1e",
+      color: "white",
+      padding: "20px",
+      borderRadius: "4px",
+      fontFamily: "Arial, sans-serif",
+      fontSize: "16px",
+      lineHeight: "1.5",
+      overflowWrap: "break-word",
+      wordWrap: "break-word",
+      hyphens: "auto",
+    };
+
+    if (content_type === "text/plain") {
+      return (
+        <pre
+          ref={emailContentRef}
+          style={{ ...emailContentStyle, whiteSpace: "pre-wrap" }}
+        >
+          {body}
+        </pre>
+      );
+    } else if (content_type === "text/html") {
+      return (
+        <div
+          ref={emailContentRef}
+          dangerouslySetInnerHTML={{ __html: body }}
+          style={emailContentStyle}
+        />
+      );
+    }
+
+    return null;
+  };
+
+  const emailVariants = {
+    initial: (direction) => ({
+      opacity: 0,
+      x: direction === "next" ? "100%" : "-100%",
+    }),
+    animate: { opacity: 1, x: 0 },
+    exit: (direction) => ({
+      opacity: 0,
+      x: direction === "next" ? "-100%" : "100%",
+    }),
+  };
+
+  const emailTransition = {
+    type: "tween",
+    ease: "anticipate",
+    duration: 0.5,
+  };
+
+  if (!email) {
+    return (
+      <BaseLayout>
+        <Typography variant="h5">Loading email details...</Typography>
+      </BaseLayout>
+    );
+  }
+
+  return (
+    <BaseLayout>
+      {isMobile ? (
+        <Drawer
+          anchor="bottom"
+          open={true}
+          onClose={() => navigate("/archive")}
+          PaperProps={{
+            style: { height: "100%", backgroundColor: "#000000" },
+          }}
+        >
+          <Box sx={{ padding: "20px", height: "100%", display: "flex", flexDirection: "column" }}>
+            <Box sx={{ flexGrow: 1, overflowY: "auto" }}>
+              <IconButton
+                edge="end"
+                color="inherit"
+                onClick={() => navigate("/archive")}
+                aria-label="close"
+                sx={{ position: "absolute", top: "10px", right: "10px" }}
+              >
+                <CloseIcon sx={{ color: "white" }} />
+              </IconButton>
+              <AnimatePresence initial={false} custom={currentEmailIndex > email.id ? "next" : "prev"}>
+                {email && (
+                  <motion.div
+                    key={emailId}
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
+                    variants={emailVariants}
+                    transition={emailTransition}
+                    custom={currentEmailIndex > email.id ? "next" : "prev"}
+                  >
+                    <Typography
+                      variant="h5"
+                      sx={{ color: "white", marginBottom: "10px" }}
+                    >
+                      {email.subject}
+                    </Typography>
+                    <Typography
+                      variant="body1"
+                      sx={{ color: "white", marginBottom: "10px" }}
+                    >
+                      From: {email.sender}
+                    </Typography>
+                    <Typography
+                      variant="body1"
+                      sx={{ color: "white", marginBottom: "10px" }}
+                    >
+                      To: {email.recipients}
+                    </Typography>
+                    <Typography
+                      variant="body1"
+                      sx={{ color: "white", marginBottom: "20px" }}
+                    >
+                      Date: {email.date}
+                    </Typography>
+                    {renderEmailContent()}
+                    {attachments.length > 0 && (
+                      <>
+                        <Typography
+                          variant="h6"
+                          sx={{ color: "white", marginTop: "20px" }}
+                        >
+                          Attachments:
+                        </Typography>
+                        <ul>
+                          {attachments.map((attachment) => (
+                            <li key={attachment.id}>
+                              <a
+                                href={`http://192.168.0.112:5000/download_attachment/${attachment.id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ color: "white" }}
+                              >
+                                {attachment.filename}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </Box>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                marginTop: "20px",
+                position: "sticky",
+                bottom: 0,
+                backgroundColor: "#000000",
+                padding: "10px 0",
+              }}
+            >
+              <Fade in={currentEmailIndex > 1}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handlePreviousEmail}
+                  disabled={currentEmailIndex === 1}
+                >
+                  Previous
+                </Button>
+              </Fade>
+              <Fade in={currentEmailIndex < totalEmails}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleNextEmail}
+                  disabled={currentEmailIndex === totalEmails}
+                >
+                  Next
+                </Button>
+              </Fade>
+            </Box>
+          </Box>
+        </Drawer>
+      ) : (
+        <Box sx={{ display: "flex", height: "100%" }}>
+          <Box sx={{ flex: 1, padding: "20px", overflowY: "auto" }}>
+            <AnimatePresence initial={false} custom={currentEmailIndex > email.id ? "next" : "prev"}>
+              {email && (
+                <motion.div
+                  key={emailId}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  variants={emailVariants}
+                  transition={emailTransition}
+                  custom={currentEmailIndex > email.id ? "next" : "prev"}
+                >
+                  <Typography
+                    variant="h5"
+                    sx={{ color: "white", marginBottom: "10px" }}
+                  >
+                    {email.subject}
+                  </Typography>
+                  <Typography
+                    variant="body1"
+                    sx={{ color: "white", marginBottom: "10px" }}
+                  >
+                    From: {email.sender}
+                  </Typography>
+                  <Typography
+                    variant="body1"
+                    sx={{ color: "white", marginBottom: "10px" }}
+                  >
+                    To: {email.recipients}
+                  </Typography>
+                  <Typography
+                    variant="body1"
+                    sx={{ color: "white", marginBottom: "20px" }}
+                  >
+                    Date: {email.date}
+                  </Typography>
+                  {renderEmailContent()}
+                  {attachments.length > 0 && (
+                    <>
+                      <Typography
+                        variant="h6"
+                        sx={{ color: "white", marginTop: "20px" }}
+                      >
+                        Attachments:
+                      </Typography>
+                      <ul>
+                        {attachments.map((attachment) => (
+                          <li key={attachment.id}>
+                            <a
+                              href={`http://192.168.0.112:5000/download_attachment/${attachment.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ color: "white" }}
+                            >
+                              {attachment.filename}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </Box>
+        </Box>
+      )}
+    </BaseLayout>
+  );
+};
+
+export default EmailDetailsPage;

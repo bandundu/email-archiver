@@ -79,7 +79,7 @@ def latest_emails():
     cursor = conn.cursor()
 
     # Fetch the latest archived emails
-    cursor.execute("SELECT subject, sender, date FROM emails ORDER BY date DESC LIMIT 10")
+    cursor.execute("SELECT subject, sender, date FROM emails ORDER BY date DESC LIMIT 5")
     latest_emails = cursor.fetchall()
 
     conn.close()
@@ -143,6 +143,46 @@ def create_account():
     # For GET requests or other non-POST methods
     return render_template('create_account.html')
 
+@app.route('/emails')
+def get_emails():
+    page = request.args.get('page', default=1, type=int)
+    per_page = request.args.get('per_page', default=10, type=int)
+    sort_by = request.args.get('sort_by', default='date')
+    sort_order = request.args.get('sort_order', default='desc')
+
+    conn = sqlite3.connect('email_archive.db')
+    cursor = conn.cursor()
+
+    # Get the total count of emails
+    cursor.execute("SELECT COUNT(*) FROM emails")
+    total_emails = cursor.fetchone()[0]
+
+    # Calculate the offset based on the page and per_page values
+    offset = (page - 1) * per_page
+
+    # Fetch the emails with pagination
+    query = f"SELECT * FROM emails ORDER BY {sort_by} {sort_order} LIMIT {per_page} OFFSET {offset}"
+    cursor.execute(query)
+    emails = cursor.fetchall()
+
+    conn.close()
+
+    email_data = [
+        {
+            'id': email[0],
+            'account_id': email[1],
+            'subject': email[2],
+            'sender': email[3],
+            'recipients': email[4],
+            'date': email[5],
+            'body': email[6],
+            'unique_id': email[7]
+        }
+        for email in emails
+    ]
+
+    return jsonify({'emails': email_data, 'total_emails': total_emails})
+
 @app.route('/list_accounts')
 def list_accounts():
     conn = sqlite3.connect('email_archive.db')
@@ -205,12 +245,40 @@ def search_emails():
         return render_template('search_emails.html', emails=emails, query=query)
     return render_template('search_emails.html')
 
+# @app.route('/email_details/<int:email_id>')
+# def email_details(email_id):
+#     conn = sqlite3.connect('email_archive.db')
+#     email, attachments, attachment_filenames = email_archiver.get_email_details(conn, email_id)
+#     conn.close()
+#     return render_template('email_details.html', email=email, attachments=attachments, attachment_filenames=attachment_filenames)
+
 @app.route('/email_details/<int:email_id>')
 def email_details(email_id):
     conn = sqlite3.connect('email_archive.db')
     email, attachments, attachment_filenames = email_archiver.get_email_details(conn, email_id)
     conn.close()
-    return render_template('email_details.html', email=email, attachments=attachments, attachment_filenames=attachment_filenames)
+
+    if email:
+        email_data = {
+            'id': email[0],
+            'account_id': email[1],
+            'subject': email[2],
+            'sender': email[3],
+            'recipients': email[4],
+            'date': email[5],
+            'body': email[6],
+            'content_type': email[7]
+        }
+        attachment_data = [
+            {
+                'id': attachment[0],
+                'filename': attachment[1]
+            }
+            for attachment in attachments
+        ]
+        return jsonify({'email': email_data, 'attachments': attachment_data})
+    else:
+        return "Email not found", 404
 
 @app.route('/download_attachment/<int:attachment_id>')
 def download_attachment(attachment_id):

@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useInView } from "react-intersection-observer";
 import {
   Box,
   Typography,
-  TextField,
-  Button,
   Table,
   TableBody,
   TableCell,
@@ -11,132 +10,318 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Checkbox,
   IconButton,
+  TablePagination,
+  TableSortLabel,
+  Card,
+  CardContent,
+  CardActions,
+  useMediaQuery,
 } from "@mui/material";
 import { motion } from "framer-motion";
 import BaseLayout from "./BaseLayout";
 import DeleteIcon from "@mui/icons-material/Delete";
-import FilterListIcon from "@mui/icons-material/FilterList";
-import SearchIcon from "@mui/icons-material/Search";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import ReplyIcon from "@mui/icons-material/Reply";
+import ForwardIcon from "@mui/icons-material/Forward";
+import FolderIcon from "@mui/icons-material/Folder";
 import axios from "axios";
+import EmailAddress from "./EmailAddress";
+import { useNavigate } from "react-router-dom";
 
 const ArchivePage = () => {
   const [emails, setEmails] = useState([]);
-  const [selectedEmails, setSelectedEmails] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [sortBy, setSortBy] = useState("date");
+  const [sortOrder, setSortOrder] = useState("desc");
+  const [totalEmails, setTotalEmails] = useState(0);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  const isMobile = useMediaQuery("(max-width:900px)");
+  const archiveRef = useRef(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchEmails();
-  }, []);
+  }, [page, rowsPerPage, sortBy, sortOrder]);
+
+  useEffect(() => {
+    if (archiveRef.current) {
+      archiveRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [page]);
 
   const fetchEmails = async () => {
     try {
-      const response = await axios.get("/api/emails");
-      setEmails(response.data);
+      const response = await axios.get("http://192.168.0.112:5000/emails", {
+        params: {
+          page: page + 1,
+          per_page: rowsPerPage,
+          sort_by: sortBy,
+          sort_order: sortOrder,
+        },
+      });
+      setEmails(response.data.emails);
+      setTotalEmails(response.data.total_emails);
     } catch (error) {
       console.error("Error fetching emails:", error);
     }
   };
 
-  const handleEmailSelection = (emailId) => {
-    const selectedIndex = selectedEmails.indexOf(emailId);
-    let newSelected = [];
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
 
-    if (selectedIndex === -1) {
-      newSelected = newSelected.concat(selectedEmails, emailId);
-    } else if (selectedIndex === 0) {
-      newSelected = newSelected.concat(selectedEmails.slice(1));
-    } else if (selectedIndex === selectedEmails.length - 1) {
-      newSelected = newSelected.concat(selectedEmails.slice(0, -1));
-    } else if (selectedIndex > 0) {
-      newSelected = newSelected.concat(
-        selectedEmails.slice(0, selectedIndex),
-        selectedEmails.slice(selectedIndex + 1)
-      );
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const handleSortBy = (column) => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(column);
+      setSortOrder("asc");
     }
-
-    setSelectedEmails(newSelected);
   };
 
-  const handleSelectAllEmails = (event) => {
-    if (event.target.checked) {
-      const newSelected = emails.map((email) => email.id);
-      setSelectedEmails(newSelected);
-      return;
-    }
-    setSelectedEmails([]);
+  const handleViewDetails = (emailId) => {
+    navigate(`/email-details/${emailId}`);
   };
 
-  const handleSearch = (event) => {
-    setSearchQuery(event.target.value);
+  const handleReply = (emailId) => {
+    // Placeholder for reply functionality
+    console.log("Reply to email:", emailId);
   };
 
-  const filteredEmails = emails.filter((email) =>
-    email.subject.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleForward = (emailId) => {
+    // Placeholder for forward functionality
+    console.log("Forward email:", emailId);
+  };
+
+  const handleMoveToFolder = (emailId) => {
+    // Placeholder for move to folder functionality
+    console.log("Move email to folder:", emailId);
+  };
+
+  const handleDeleteEmail = (emailId) => {
+    // Placeholder for delete email functionality
+    console.log("Delete email:", emailId);
+  };
+
+  const cardVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: (index) => ({
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.5, delay: index * 0.1 },
+    }),
+  };
 
   return (
     <BaseLayout
       pageTitle="Archive"
       pageSubtitle="View and manage archived emails"
     >
-      <TableContainer component={Paper}>
-        <Table sx={{ backgroundColor: "black" }}>
-          <TableHead>
-            <TableRow>
-              <TableCell padding="checkbox">
-                <Checkbox
-                  color="secondary"
-                  indeterminate={
-                    selectedEmails.length > 0 &&
-                    selectedEmails.length < emails.length
-                  }
-                  checked={
-                    emails.length > 0 && selectedEmails.length === emails.length
-                  }
-                  onChange={handleSelectAllEmails}
-                  inputProps={{
-                    "aria-label": "select all emails",
-                  }}
-                />
-              </TableCell>
-              <TableCell sx={{ color: "white" }}>From</TableCell>
-              <TableCell sx={{ color: "white" }}>Subject</TableCell>
-              <TableCell sx={{ color: "white" }}>Date</TableCell>
-              <TableCell sx={{ color: "white" }}>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredEmails.map((email) => (
-              <TableRow
+      <Box ref={archiveRef}>
+        {isMobile ? (
+          <>
+            {emails.map((email, index) => (
+              <motion.div
                 key={email.id}
-                sx={{
-                  backgroundColor: selectedEmails.includes(email.id)
-                    ? "#1A2027"
-                    : "#121212",
-                }}
+                variants={cardVariants}
+                initial="hidden"
+                animate="visible"
+                custom={index}
               >
-                <TableCell padding="checkbox">
-                  <Checkbox
-                    color="primary"
-                    checked={selectedEmails.includes(email.id)}
-                    onChange={() => handleEmailSelection(email.id)}
-                  />
-                </TableCell>
-                <TableCell sx={{ color: "white" }}>{email.from}</TableCell>
-                <TableCell sx={{ color: "white" }}>{email.subject}</TableCell>
-                <TableCell sx={{ color: "white" }}>{email.date}</TableCell>
-                <TableCell>
-                  <IconButton edge="end" aria-label="delete">
-                    <DeleteIcon sx={{ color: "white" }} />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
+                <Card
+                  sx={{
+                    marginBottom: "10px",
+                    backgroundColor: "#242423",
+                    width: "100%",
+                    maxWidth: "100%",
+                  }}
+                >
+                  <CardContent>
+                    <Typography variant="subtitle1" sx={{ color: "white" }}>
+                      {email.subject}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "#bdbdbd" }}>
+                      From: <EmailAddress emails={[email.sender]} />
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "#bdbdbd" }}>
+                      To: <EmailAddress emails={email.recipients.split(", ")} />
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "#bdbdbd" }}>
+                      Date: {email.date}
+                    </Typography>
+                  </CardContent>
+                  <CardActions>
+                    <IconButton onClick={() => handleViewDetails(email.id)}>
+                      <VisibilityIcon sx={{ color: "white" }} />
+                    </IconButton>
+                    <IconButton onClick={() => handleReply(email.id)}>
+                      <ReplyIcon sx={{ color: "white" }} />
+                    </IconButton>
+                    <IconButton onClick={() => handleForward(email.id)}>
+                      <ForwardIcon sx={{ color: "white" }} />
+                    </IconButton>
+                    <IconButton onClick={() => handleMoveToFolder(email.id)}>
+                      <FolderIcon sx={{ color: "white" }} />
+                    </IconButton>
+                    <IconButton onClick={() => handleDeleteEmail(email.id)}>
+                      <DeleteIcon sx={{ color: "white" }} />
+                    </IconButton>
+                  </CardActions>
+                </Card>
+              </motion.div>
             ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            <TablePagination
+              rowsPerPageOptions={[5, 10, 25]}
+              component="div"
+              count={totalEmails}
+              rowsPerPage={rowsPerPage}
+              page={page}
+              onPageChange={handleChangePage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              sx={{
+                color: "white",
+                "& .MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows":
+                  {
+                    color: "white",
+                  },
+                "& .MuiTablePagination-select, .MuiTablePagination-selectIcon":
+                  {
+                    color: "white",
+                  },
+                "& .MuiTablePagination-actions .MuiIconButton-root": {
+                  color: "white",
+                },
+              }}
+            />
+          </>
+        ) : (
+          <>
+            <TableContainer
+              component={Paper}
+              sx={{
+                backgroundColor: "black",
+                color: "white",
+              }}
+            >
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>
+                      <TableSortLabel
+                        active={sortBy === "subject"}
+                        direction={sortBy === "subject" ? sortOrder : "asc"}
+                        onClick={() => handleSortBy("subject")}
+                        sx={{ color: "white" }}
+                      >
+                        Subject
+                      </TableSortLabel>
+                    </TableCell>
+                    <TableCell>
+                      <TableSortLabel
+                        active={sortBy === "sender"}
+                        direction={sortBy === "sender" ? sortOrder : "asc"}
+                        onClick={() => handleSortBy("sender")}
+                        sx={{ color: "white" }}
+                      >
+                        Sender
+                      </TableSortLabel>
+                    </TableCell>
+                    <TableCell>
+                      <TableSortLabel
+                        active={sortBy === "recipients"}
+                        direction={sortBy === "recipients" ? sortOrder : "asc"}
+                        onClick={() => handleSortBy("recipients")}
+                        sx={{ color: "white" }}
+                      >
+                        Recipients
+                      </TableSortLabel>
+                    </TableCell>
+                    <TableCell>
+                      <TableSortLabel
+                        active={sortBy === "date"}
+                        direction={sortBy === "date" ? sortOrder : "asc"}
+                        onClick={() => handleSortBy("date")}
+                        sx={{ color: "white" }}
+                      >
+                        Date
+                      </TableSortLabel>
+                    </TableCell>
+                    <TableCell sx={{ color: "white" }}>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {emails.map((email) => (
+                    <TableRow key={email.id}>
+                      <TableCell sx={{ color: "white" }}>
+                        {email.subject}
+                      </TableCell>
+                      <TableCell sx={{ color: "white" }}>
+                        <EmailAddress emails={[email.sender]} />
+                      </TableCell>
+                      <TableCell sx={{ color: "white" }}>
+                        <EmailAddress emails={email.recipients.split(", ")} />
+                      </TableCell>
+                      <TableCell sx={{ color: "white" }}>
+                        {email.date}
+                      </TableCell>
+                      <TableCell>
+                        <IconButton onClick={() => handleViewDetails(email.id)}>
+                          <VisibilityIcon sx={{ color: "white" }} />
+                        </IconButton>
+                        <IconButton onClick={() => handleReply(email.id)}>
+                          <ReplyIcon sx={{ color: "white" }} />
+                        </IconButton>
+                        <IconButton onClick={() => handleForward(email.id)}>
+                          <ForwardIcon sx={{ color: "white" }} />
+                        </IconButton>
+                        <IconButton
+                          onClick={() => handleMoveToFolder(email.id)}
+                        >
+                          <FolderIcon sx={{ color: "white" }} />
+                        </IconButton>
+                        <IconButton onClick={() => handleDeleteEmail(email.id)}>
+                          <DeleteIcon sx={{ color: "white" }} />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <TablePagination
+              rowsPerPageOptions={[5, 10, 25]}
+              component="div"
+              count={totalEmails}
+              rowsPerPage={rowsPerPage}
+              page={page}
+              onPageChange={handleChangePage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              sx={{
+                color: "white",
+                "& .MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows":
+                  {
+                    color: "white",
+                  },
+                "& .MuiTablePagination-select, .MuiTablePagination-selectIcon":
+                  {
+                    color: "white",
+                  },
+                "& .MuiTablePagination-actions .MuiIconButton-root": {
+                  color: "white",
+                },
+              }}
+            />
+          </>
+        )}
+      </Box>
     </BaseLayout>
   );
 };
