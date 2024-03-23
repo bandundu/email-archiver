@@ -1,9 +1,9 @@
 import React from "react";
-import { Typography, Link } from "@mui/material";
+import { Link } from "@mui/material";
 
 const EmailAddress = ({ emails }) => {
   const extractDisplayName = (email) => {
-    const match = email.match(/^(.+?)\s*</);
+    const match = email.match(/^(.*?)\s*</);
     return match ? match[1] : email;
   };
 
@@ -13,20 +13,19 @@ const EmailAddress = ({ emails }) => {
   };
 
   return (
-    <>
+    <span style={{ color: "#bdbdbd", display: "inline" }}>
       {emails.map((email, index) => (
-        <Typography
-          key={index}
-          variant="body2"
-          sx={{ color: "#bdbdbd", display: "inline" }}
-        >
-          <Link href={`mailto:${extractEmailAddress(email)}`} sx={{ color: "#bdbdbd" }}>
+        <React.Fragment key={index}>
+          {index > 0 && ", "}
+          <Link
+            href={`mailto:${extractEmailAddress(email)}`}
+            sx={{ color: "#bdbdbd" }}
+          >
             {extractDisplayName(email)}
           </Link>
-          {index < emails.length - 1 && ", "}
-        </Typography>
+        </React.Fragment>
       ))}
-    </>
+    </span>
   );
 };
 

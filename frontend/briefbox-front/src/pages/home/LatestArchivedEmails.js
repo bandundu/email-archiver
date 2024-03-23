@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import {
   Typography,
   Table,
@@ -9,29 +10,34 @@ import {
   TableHead,
   TableRow,
   Paper,
-} from '@mui/material';
+} from "@mui/material";
+import EmailAddress from "./EmailAddress";
 
 function LatestArchivedEmails() {
   const [emails, setEmails] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchLatestEmails = async () => {
       try {
-        const response = await axios.get(
-          "http://192.168.0.112:5000/latest-emails"
-        );
-        setEmails(response.data);
+        const response = await axios.get("http://192.168.0.112:5000/emails", {
+          params: {
+            page: 1,
+            per_page: 10,
+            sort_by: "date",
+            sort_order: "desc",
+          },
+        });
+        setEmails(response.data.emails);
       } catch (error) {
-        console.error('Error fetching latest emails:', error);
+        console.error("Error fetching latest emails:", error);
       }
     };
-
     fetchLatestEmails();
   }, []);
 
-  const extractSenderName = (sender) => {
-    const match = sender.match(/^(.*?)\s*</);
-    return match ? match[1] : sender;
+  const handleSubjectClick = (emailId) => {
+    navigate(`/email-details/${emailId}`);
   };
 
   return (
@@ -54,14 +60,16 @@ function LatestArchivedEmails() {
           </TableRow>
         </TableHead>
         <TableBody>
-          {emails.map((email, index) => (
-            <TableRow key={index}>
+          {emails.map((email) => (
+            <TableRow key={email.id}>
               <TableCell
                 sx={{
                   wordBreak: "break-word",
                   maxWidth: "300px",
                   color: "white",
+                  cursor: "pointer",
                 }}
+                onClick={() => handleSubjectClick(email.id)}
               >
                 {email.subject}
               </TableCell>
@@ -71,9 +79,8 @@ function LatestArchivedEmails() {
                   maxWidth: "200px",
                   color: "white",
                 }}
-                title={email.sender}
               >
-                {extractSenderName(email.sender)}
+                <EmailAddress emails={[email.sender]} />
               </TableCell>
               <TableCell sx={{ color: "white" }}>{email.date}</TableCell>
             </TableRow>

@@ -91,6 +91,10 @@ const ArchivePage = () => {
     navigate(`/email-details/${emailId}`);
   };
 
+  const handleSubjectClick = (emailId) => {
+    navigate(`/email-details/${emailId}`);
+  };
+
   const handleReply = (emailId) => {
     // Placeholder for reply functionality
     console.log("Reply to email:", emailId);
@@ -145,7 +149,11 @@ const ArchivePage = () => {
                   }}
                 >
                   <CardContent>
-                    <Typography variant="subtitle1" sx={{ color: "white" }}>
+                    <Typography
+                      variant="subtitle1"
+                      sx={{ color: "white", cursor: "pointer" }}
+                      onClick={() => handleSubjectClick(email.id)}
+                    >
                       {email.subject}
                     </Typography>
                     <Typography variant="body2" sx={{ color: "#bdbdbd" }}>
@@ -162,14 +170,20 @@ const ArchivePage = () => {
                     <IconButton onClick={() => handleViewDetails(email.id)}>
                       <VisibilityIcon sx={{ color: "white" }} />
                     </IconButton>
-                    <IconButton onClick={() => handleReply(email.id)}>
-                      <ReplyIcon sx={{ color: "white" }} />
+                    <IconButton onClick={() => handleReply(email.id)} disabled>
+                      <ReplyIcon sx={{ color: "grey" }} />
                     </IconButton>
-                    <IconButton onClick={() => handleForward(email.id)}>
-                      <ForwardIcon sx={{ color: "white" }} />
+                    <IconButton
+                      onClick={() => handleForward(email.id)}
+                      disabled
+                    >
+                      <ForwardIcon sx={{ color: "grey" }} />
                     </IconButton>
-                    <IconButton onClick={() => handleMoveToFolder(email.id)}>
-                      <FolderIcon sx={{ color: "white" }} />
+                    <IconButton
+                      onClick={() => handleMoveToFolder(email.id)}
+                      disabled
+                    >
+                      <FolderIcon sx={{ color: "grey" }} />
                     </IconButton>
                     <IconButton onClick={() => handleDeleteEmail(email.id)}>
                       <DeleteIcon sx={{ color: "white" }} />
@@ -260,7 +274,10 @@ const ArchivePage = () => {
                 <TableBody>
                   {emails.map((email) => (
                     <TableRow key={email.id}>
-                      <TableCell sx={{ color: "white" }}>
+                      <TableCell
+                        sx={{ color: "white", cursor: "pointer" }}
+                        onClick={() => handleSubjectClick(email.id)}
+                      >
                         {email.subject}
                       </TableCell>
                       <TableCell sx={{ color: "white" }}>
@@ -276,16 +293,23 @@ const ArchivePage = () => {
                         <IconButton onClick={() => handleViewDetails(email.id)}>
                           <VisibilityIcon sx={{ color: "white" }} />
                         </IconButton>
-                        <IconButton onClick={() => handleReply(email.id)}>
-                          <ReplyIcon sx={{ color: "white" }} />
+                        <IconButton
+                          onClick={() => handleReply(email.id)}
+                          disabled
+                        >
+                          <ReplyIcon sx={{ color: "grey" }} />
                         </IconButton>
-                        <IconButton onClick={() => handleForward(email.id)}>
-                          <ForwardIcon sx={{ color: "white" }} />
+                        <IconButton
+                          onClick={() => handleForward(email.id)}
+                          disabled
+                        >
+                          <ForwardIcon sx={{ color: "grey" }} />
                         </IconButton>
                         <IconButton
                           onClick={() => handleMoveToFolder(email.id)}
+                          disabled
                         >
-                          <FolderIcon sx={{ color: "white" }} />
+                          <FolderIcon sx={{ color: "grey" }} />
                         </IconButton>
                         <IconButton onClick={() => handleDeleteEmail(email.id)}>
                           <DeleteIcon sx={{ color: "white" }} />

@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import BaseLayout from "./BaseLayout";
 import CloseIcon from "@mui/icons-material/Close";
 import axios from "axios";
+import { CircularProgress } from "@mui/material";
 
 const EmailDetailsPage = () => {
   const { emailId } = useParams();
@@ -130,11 +131,13 @@ const EmailDetailsPage = () => {
     initial: (direction) => ({
       opacity: 0,
       x: direction === "next" ? "100%" : "-100%",
+      y: 0, // Add this line to set the initial vertical position to 0
     }),
-    animate: { opacity: 1, x: 0 },
+    animate: { opacity: 1, x: 0, y: 0 }, // Add y: 0 to maintain the vertical position during animation
     exit: (direction) => ({
       opacity: 0,
       x: direction === "next" ? "-100%" : "100%",
+      y: 0, // Add this line to set the exit vertical position to 0
     }),
   };
 
@@ -147,7 +150,16 @@ const EmailDetailsPage = () => {
   if (!email) {
     return (
       <BaseLayout>
-        <Typography variant="h5">Loading email details...</Typography>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100vh",
+          }}
+        >
+          <CircularProgress color="primary" />
+        </Box>
       </BaseLayout>
     );
   }
@@ -163,8 +175,17 @@ const EmailDetailsPage = () => {
             style: { height: "100%", backgroundColor: "#000000" },
           }}
         >
-          <Box sx={{ padding: "20px", height: "100%", display: "flex", flexDirection: "column" }}>
-            <Box sx={{ flexGrow: 1, overflowY: "auto" }}>
+          <Box
+            sx={{
+              padding: "20px",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <Box sx={{ flexGrow: 1, overflowY: "auto", position: "relative" }}>
+              {" "}
+              {/* Add position: "relative" */}
               <IconButton
                 edge="end"
                 color="inherit"
@@ -174,7 +195,10 @@ const EmailDetailsPage = () => {
               >
                 <CloseIcon sx={{ color: "white" }} />
               </IconButton>
-              <AnimatePresence initial={false} custom={currentEmailIndex > email.id ? "next" : "prev"}>
+              <AnimatePresence
+                initial={false}
+                custom={currentEmailIndex > email.id ? "next" : "prev"}
+              >
                 {email && (
                   <motion.div
                     key={emailId}
@@ -184,6 +208,7 @@ const EmailDetailsPage = () => {
                     variants={emailVariants}
                     transition={emailTransition}
                     custom={currentEmailIndex > email.id ? "next" : "prev"}
+                    style={{ position: "absolute", width: "100%" }} // Add this line to position the emails absolutely
                   >
                     <Typography
                       variant="h5"
@@ -274,8 +299,20 @@ const EmailDetailsPage = () => {
         </Drawer>
       ) : (
         <Box sx={{ display: "flex", height: "100%" }}>
-          <Box sx={{ flex: 1, padding: "20px", overflowY: "auto" }}>
-            <AnimatePresence initial={false} custom={currentEmailIndex > email.id ? "next" : "prev"}>
+          <Box
+            sx={{
+              flex: 1,
+              padding: "20px",
+              overflowY: "auto",
+              position: "relative",
+            }}
+          >
+            {" "}
+            {/* Add position: "relative" */}
+            <AnimatePresence
+              initial={false}
+              custom={currentEmailIndex > email.id ? "next" : "prev"}
+            >
               {email && (
                 <motion.div
                   key={emailId}
@@ -285,6 +322,7 @@ const EmailDetailsPage = () => {
                   variants={emailVariants}
                   transition={emailTransition}
                   custom={currentEmailIndex > email.id ? "next" : "prev"}
+                  style={{ position: "absolute", width: "100%" }} // Add this line to position the emails absolutely
                 >
                   <Typography
                     variant="h5"
