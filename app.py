@@ -12,7 +12,7 @@ load_dotenv()
 
 app = Flask(__name__)
 #CORS(app)  # Enable CORS for all routes and origins
-cors = CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "http://192.168.0.112:3000"]}})
+cors = CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]}}, supports_credentials=True)
 
 @app.template_filter('format_date')
 def format_date(date_str):
@@ -71,7 +71,10 @@ def get_stats():
         'totalAttachments': total_attachments
     }
 
-    return jsonify(stats)
+    # create response and set CORS headers
+    response = jsonify(stats)
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
 
 @app.route('/latest-emails')
 def latest_emails():
@@ -94,7 +97,10 @@ def latest_emails():
         for email in latest_emails
     ]
 
-    return jsonify(emails_data)
+    # create response and set CORS headers
+    response = jsonify(emails_data)
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
 
 @app.route('/create_account', methods=['GET', 'POST'])
 def create_account():
@@ -114,7 +120,7 @@ def create_account():
         port = data.get('port')
 
         # Validate the extracted data
-        if not all([email, password, protocol, server, port]):
+        if not all([email, password, protocol.lower(), server, port]):
             # Respond with an error if any field is missing or the request is JSON
             if request.is_json:
                 return jsonify({'error': 'Missing required fields'}), 400
@@ -181,7 +187,9 @@ def get_emails():
         for email in emails
     ]
 
-    return jsonify({'emails': email_data, 'total_emails': total_emails})
+    response = make_response(jsonify({'emails': email_data, 'total_emails': total_emails}))
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
 
 @app.route('/list_accounts')
 def list_accounts():
@@ -201,11 +209,16 @@ def get_accounts():
             'id': account[0],
             'email': account[1],
             'protocol': account[3],
+            'server': account[4],
+            'port': account[5]
         }
         for account in accounts
     ]
+    # create response and set CORS headers
+    response = jsonify(accounts_data)
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
 
-    return jsonify(accounts_data)
 
 @app.route('/update_account/<int:account_id>', methods=['GET', 'POST'])
 def update_account(account_id):
@@ -217,7 +230,7 @@ def update_account(account_id):
         server = request.form['server']
         port = int(request.form['port'])
         mailbox = request.form['mailbox']
-        email_archiver.update_account(conn, account_id, email, password, protocol, server, port, mailbox)
+        email_archiver.update_account(conn, account_id, email, password, protocol.lower(), server, port, mailbox)
         conn.close()
         return redirect(url_for('list_accounts'))
     account = email_archiver.get_account(conn, account_id)
@@ -250,11 +263,18 @@ def delete_email(email_id):
         conn.commit()
         conn.close()
 
-        return jsonify({'message': 'Email deleted successfully'}), 200
+        # create response and set CORS headers
+        response = jsonify({'message': 'Email deleted successfully'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
+
     except Exception as e:
         conn.rollback()
         conn.close()
-        return jsonify({'error': 'An error occurred while deleting the email'}), 500
+        # create response and set CORS headers
+        response = jsonify({'error': 'An error occurred while deleting the email'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
     
 @app.route('/search_emails', methods=['GET', 'POST'])
 def search_emails():
@@ -297,9 +317,15 @@ def email_details(email_id):
             }
             for attachment in attachments
         ]
-        return jsonify({'email': email_data, 'attachments': attachment_data})
+        # create response and set CORS headers
+        response = jsonify({'email': email_data, 'attachments': attachment_data})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
     else:
-        return "Email not found", 404
+        # create response and set CORS headers
+        response = jsonify({'error': 'Email not found'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
 
 @app.route('/download_attachment/<int:attachment_id>')
 def download_attachment(attachment_id):
@@ -314,9 +340,14 @@ def download_attachment(attachment_id):
         response = make_response(content)
         response.headers.set('Content-Type', 'application/octet-stream')
         response.headers.set('Content-Disposition', 'attachment', filename=filename)
+        # add CORS headers
+        response.headers.add('Access-Control-Allow-Origin', '*')
         return response
     else:
-        return "Attachment not found", 404
+        # create response and set CORS headers
+        response = jsonify({'error': 'Attachment not found'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
     
 @app.route('/export_email/<int:email_id>')
 def export_email(email_id):
@@ -328,9 +359,14 @@ def export_email(email_id):
         response = make_response(email_data)
         response.headers.set('Content-Type', 'message/rfc822')
         response.headers.set('Content-Disposition', 'attachment', filename=f"email_{email_id}.eml")
+        # add CORS headers
+        response.headers.add('Access-Control-Allow-Origin', '*')
         return response
     else:
-        return "Email not found", 404
+        # create response and set CORS headers
+        response = jsonify({'error': 'Email not found'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
 
 @app.route('/export_all_emails')
 def export_all_emails():
@@ -341,6 +377,8 @@ def export_all_emails():
     response = make_response(zip_data)
     response.headers.set('Content-Type', 'application/zip')
     response.headers.set('Content-Disposition', 'attachment', filename="all_emails.zip")
+    # add CORS headers
+    response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
 @app.route('/export_search_results', methods=['POST'])
@@ -353,6 +391,8 @@ def export_search_results():
     response = make_response(zip_data)
     response.headers.set('Content-Type', 'application/zip')
     response.headers.set('Content-Disposition', 'attachment', filename="search_results.zip")
+    # add CORS headers
+    response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
 def run_archiver_thread():
@@ -367,4 +407,4 @@ if __name__ == '__main__':
     archiver_thread.start()
     
     # Run the Flask app
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='127.0.0.1', port=5000, debug=True)

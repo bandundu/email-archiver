@@ -23,7 +23,7 @@ const AccountsPage = () => {
   const [newAccount, setNewAccount] = useState({
     email: "",
     password: "",
-    protocol: "POP3",
+    protocol: "pop3",
     server: "",
     port: "",
   });
@@ -37,10 +37,12 @@ const AccountsPage = () => {
 
   const fetchAccounts = async () => {
     try {
-      const response = await axios.get(
-        "http://192.168.0.112:5000/get_accounts"
-      );
-      setAccounts(response.data);
+      const response = await axios.get("http://127.0.0.1:5000/get_accounts");
+      const updatedAccounts = response.data.map((account) => ({
+        ...account,
+        protocol: account.protocol.toUpperCase(),
+      }));
+      setAccounts(updatedAccounts);
     } catch (error) {
       console.error("Error fetching accounts:", error);
     }
@@ -49,7 +51,7 @@ const AccountsPage = () => {
   const handleAddAccount = async () => {
     try {
       const response = await axios.post(
-        "http://192.168.0.112:5000/create_account",
+        "http://127.0.0.1:5000/create_account",
         newAccount
       );
       if (response.status === 200) {
@@ -77,7 +79,7 @@ const AccountsPage = () => {
   const handleUpdateAccount = async () => {
     try {
       const response = await axios.post(
-        `http://192.168.0.112:5000/update_account/${editAccountId}`,
+        `http://127.0.0.1:5000/update_account/${editAccountId}`,
         newAccount
       );
       if (response.status === 200) {
@@ -102,7 +104,7 @@ const AccountsPage = () => {
   const handleDeleteAccount = async (accountId) => {
     try {
       const response = await axios.post(
-        `http://192.168.0.112:5000/delete_account/${accountId}`
+        `http://127.0.0.1:5000/delete_account/${accountId}`
       );
       if (response.status === 200) {
         const updatedAccounts = accounts.filter((acc) => acc.id !== accountId);
@@ -245,9 +247,6 @@ const AccountsPage = () => {
                 <Typography variant="h6" sx={{ color: "white" }}>
                   {account.email}
                 </Typography>
-                <Typography variant="subtitle1" sx={{ color: "#bdbdbd" }}>
-                  Protocol: {account.protocol}
-                </Typography>
               </CardContent>
               <CardActions>
                 <IconButton
@@ -284,6 +283,9 @@ const AccountsPage = () => {
                   </Typography>
                   <Typography variant="body1" sx={{ color: "#bdbdbd" }}>
                     Port: {account.port}
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: "#bdbdbd" }}>
+                    Protocol: {account.protocol}
                   </Typography>
                 </CardContent>
               </Collapse>

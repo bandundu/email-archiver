@@ -201,7 +201,7 @@ function Sidebar({ isOpen, toggleDrawer }) {
           {
             text: "Settings",
             icon: <SettingsIcon />,
-            disabled: false,
+            disabled: true,
             link: "/settings",
           },
           {

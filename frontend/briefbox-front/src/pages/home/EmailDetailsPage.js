@@ -79,7 +79,7 @@ const EmailDetailsPage = () => {
         setAttachments([]); // Clear attachments for cached email
       } else {
         const response = await axios.get(
-          `http://192.168.0.112:5000/email_details/${emailId}`
+          `http://127.0.0.1:5000/email_details/${emailId}`
         );
         setEmail(response.data.email);
         setAttachments(response.data.attachments);
@@ -90,7 +90,7 @@ const EmailDetailsPage = () => {
       }
 
       const totalEmailsResponse = await axios.get(
-        "http://192.168.0.112:5000/emails",
+        "http://127.0.0.1:5000/emails",
         {
           params: {
             page: 1,
@@ -107,7 +107,7 @@ const EmailDetailsPage = () => {
 
       if (prevEmailId >= 1 && !emailCache[prevEmailId]) {
         const prevEmailResponse = await axios.get(
-          `http://192.168.0.112:5000/email_details/${prevEmailId}`
+          `http://127.0.0.1:5000/email_details/${prevEmailId}`
         );
         setEmailCache((prevCache) => ({
           ...prevCache,
@@ -117,7 +117,7 @@ const EmailDetailsPage = () => {
 
       if (nextEmailId <= totalEmails && !emailCache[nextEmailId]) {
         const nextEmailResponse = await axios.get(
-          `http://192.168.0.112:5000/email_details/${nextEmailId}`
+          `http://127.0.0.1:5000/email_details/${nextEmailId}`
         );
         setEmailCache((prevCache) => ({
           ...prevCache,
@@ -190,7 +190,7 @@ const EmailDetailsPage = () => {
   const emailTransition = {
     type: "tween",
     ease: "anticipate",
-    duration: 0.6,
+    duration: 0.55,
   };
 
   if (!email) {
@@ -232,15 +232,6 @@ const EmailDetailsPage = () => {
             <Box sx={{ flexGrow: 1, overflowY: "auto", position: "relative" }}>
               {" "}
               {/* Add position: "relative" */}
-              <IconButton
-                edge="end"
-                color="inherit"
-                onClick={() => navigate("/archive")}
-                aria-label="close"
-                sx={{ position: "absolute", top: "10px", right: "10px" }}
-              >
-                <CloseIcon sx={{ color: "white" }} />
-              </IconButton>
               <AnimatePresence
                 initial={false}
                 custom={
@@ -304,7 +295,7 @@ const EmailDetailsPage = () => {
                           {attachments.map((attachment) => (
                             <li key={attachment.id}>
                               <a
-                                href={`http://192.168.0.112:5000/download_attachment/${attachment.id}`}
+                                href={`http://127.0.0.1:5000/download_attachment/${attachment.id}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 style={{ color: "white" }}
@@ -324,6 +315,7 @@ const EmailDetailsPage = () => {
               sx={{
                 display: "flex",
                 justifyContent: "space-between",
+                alignItems: "center", // Add this line to align buttons horizontally on mobile
                 marginTop: "20px",
                 position: "sticky",
                 bottom: 0,
@@ -341,6 +333,17 @@ const EmailDetailsPage = () => {
                   Previous
                 </Button>
               </Fade>
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={() => navigate("/archive")}
+                sx={{
+                  borderColor: "grey", // Add border color to match settings page buttons
+                  color: "white", // Add text color to match settings page buttons
+                }}
+              >
+                Back
+              </Button>
               <Fade in={currentEmailIndex < totalEmails}>
                 <Button
                   variant="contained"
@@ -428,7 +431,7 @@ const EmailDetailsPage = () => {
                         {attachments.map((attachment) => (
                           <li key={attachment.id}>
                             <a
-                              href={`http://192.168.0.112:5000/download_attachment/${attachment.id}`}
+                              href={`http://127.0.0.1:5000/download_attachment/${attachment.id}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               style={{ color: "white" }}
