@@ -24,8 +24,33 @@ const EmailDetailsPage = () => {
   const [currentEmailIndex, setCurrentEmailIndex] = useState(0);
   const [totalEmails, setTotalEmails] = useState(0);
   const emailContentRef = useRef(null);
+  const [emailCache, setEmailCache] = useState({});
 
   const isMobile = useMediaQuery("(max-width:900px)");
+
+  const handlePreviousEmail = () => {
+    if (currentEmailIndex > 1) {
+      const previousEmailId = currentEmailIndex - 1;
+      setCurrentEmailIndex(previousEmailId);
+      if (emailCache[previousEmailId]) {
+        setEmail(emailCache[previousEmailId]);
+        setAttachments([]);
+      }
+      navigate(`/email-details/${previousEmailId}`);
+    }
+  };
+
+  const handleNextEmail = () => {
+    if (currentEmailIndex < totalEmails) {
+      const nextEmailId = currentEmailIndex + 1;
+      setCurrentEmailIndex(nextEmailId);
+      if (emailCache[nextEmailId]) {
+        setEmail(emailCache[nextEmailId]);
+        setAttachments([]);
+      }
+      navigate(`/email-details/${nextEmailId}`);
+    }
+  };
 
   useEffect(() => {
     fetchEmailDetails();
@@ -45,15 +70,24 @@ const EmailDetailsPage = () => {
     return () => {
       document.removeEventListener("keydown", handleKeyPress);
     };
-  }, [currentEmailIndex, totalEmails]);
+  }, [currentEmailIndex, totalEmails, emailCache]);
 
   const fetchEmailDetails = async () => {
     try {
-      const response = await axios.get(
-        `http://192.168.0.112:5000/email_details/${emailId}`
-      );
-      setEmail(response.data.email);
-      setAttachments(response.data.attachments);
+      if (emailCache[emailId]) {
+        setEmail(emailCache[emailId]);
+        setAttachments([]); // Clear attachments for cached email
+      } else {
+        const response = await axios.get(
+          `http://192.168.0.112:5000/email_details/${emailId}`
+        );
+        setEmail(response.data.email);
+        setAttachments(response.data.attachments);
+        setEmailCache((prevCache) => ({
+          ...prevCache,
+          [emailId]: response.data.email,
+        }));
+      }
 
       const totalEmailsResponse = await axios.get(
         "http://192.168.0.112:5000/emails",
@@ -66,24 +100,32 @@ const EmailDetailsPage = () => {
       );
       setTotalEmails(totalEmailsResponse.data.total_emails);
       setCurrentEmailIndex(parseInt(emailId));
+
+      // Fetch and cache the emails to the left and right
+      const prevEmailId = parseInt(emailId) - 1;
+      const nextEmailId = parseInt(emailId) + 1;
+
+      if (prevEmailId >= 1 && !emailCache[prevEmailId]) {
+        const prevEmailResponse = await axios.get(
+          `http://192.168.0.112:5000/email_details/${prevEmailId}`
+        );
+        setEmailCache((prevCache) => ({
+          ...prevCache,
+          [prevEmailId]: prevEmailResponse.data.email,
+        }));
+      }
+
+      if (nextEmailId <= totalEmails && !emailCache[nextEmailId]) {
+        const nextEmailResponse = await axios.get(
+          `http://192.168.0.112:5000/email_details/${nextEmailId}`
+        );
+        setEmailCache((prevCache) => ({
+          ...prevCache,
+          [nextEmailId]: nextEmailResponse.data.email,
+        }));
+      }
     } catch (error) {
       console.error("Error fetching email details:", error);
-    }
-  };
-
-  const handlePreviousEmail = () => {
-    if (currentEmailIndex > 1) {
-      const previousEmailId = currentEmailIndex - 1;
-      setCurrentEmailIndex(previousEmailId);
-      navigate(`/email-details/${previousEmailId}`);
-    }
-  };
-
-  const handleNextEmail = () => {
-    if (currentEmailIndex < totalEmails) {
-      const nextEmailId = currentEmailIndex + 1;
-      setCurrentEmailIndex(nextEmailId);
-      navigate(`/email-details/${nextEmailId}`);
     }
   };
 
@@ -130,21 +172,25 @@ const EmailDetailsPage = () => {
   const emailVariants = {
     initial: (direction) => ({
       opacity: 0,
-      x: direction === "next" ? "100%" : "-100%",
-      y: 0, // Add this line to set the initial vertical position to 0
+      x: direction === "prev" ? "-100%" : "100%",
+      y: 0,
     }),
-    animate: { opacity: 1, x: 0, y: 0 }, // Add y: 0 to maintain the vertical position during animation
+    animate: {
+      opacity: 1,
+      x: 0,
+      y: 0,
+    },
     exit: (direction) => ({
       opacity: 0,
-      x: direction === "next" ? "-100%" : "100%",
-      y: 0, // Add this line to set the exit vertical position to 0
+      x: direction === "prev" ? "100%" : "-100%",
+      y: 0,
     }),
   };
 
   const emailTransition = {
     type: "tween",
     ease: "anticipate",
-    duration: 0.5,
+    duration: 0.6,
   };
 
   if (!email) {
@@ -197,7 +243,13 @@ const EmailDetailsPage = () => {
               </IconButton>
               <AnimatePresence
                 initial={false}
-                custom={currentEmailIndex > email.id ? "next" : "prev"}
+                custom={
+                  currentEmailIndex >
+                  (emailCache[emailId] ? emailCache[emailId].id : email.id)
+                    ? "next"
+                    : "prev"
+                }
+                mode="wait"
               >
                 {email && (
                   <motion.div
@@ -207,8 +259,13 @@ const EmailDetailsPage = () => {
                     exit="exit"
                     variants={emailVariants}
                     transition={emailTransition}
-                    custom={currentEmailIndex > email.id ? "next" : "prev"}
-                    style={{ position: "absolute", width: "100%" }} // Add this line to position the emails absolutely
+                    custom={
+                      currentEmailIndex >
+                      (emailCache[emailId] ? emailCache[emailId].id : email.id)
+                        ? "next"
+                        : "prev"
+                    }
+                    style={{ position: "absolute", width: "100%" }}
                   >
                     <Typography
                       variant="h5"
@@ -311,7 +368,12 @@ const EmailDetailsPage = () => {
             {/* Add position: "relative" */}
             <AnimatePresence
               initial={false}
-              custom={currentEmailIndex > email.id ? "next" : "prev"}
+              custom={
+                currentEmailIndex >
+                (emailCache[emailId] ? emailCache[emailId].id : email.id)
+                  ? "next"
+                  : "prev"
+              }
             >
               {email && (
                 <motion.div
@@ -321,7 +383,12 @@ const EmailDetailsPage = () => {
                   exit="exit"
                   variants={emailVariants}
                   transition={emailTransition}
-                  custom={currentEmailIndex > email.id ? "next" : "prev"}
+                  custom={
+                    currentEmailIndex >
+                    (emailCache[emailId] ? emailCache[emailId].id : email.id)
+                      ? "next"
+                      : "prev"
+                  }
                   style={{ position: "absolute", width: "100%" }} // Add this line to position the emails absolutely
                 >
                   <Typography

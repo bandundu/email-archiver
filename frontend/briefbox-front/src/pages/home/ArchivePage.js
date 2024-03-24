@@ -17,6 +17,11 @@ import {
   CardContent,
   CardActions,
   useMediaQuery,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
 } from "@mui/material";
 import { motion } from "framer-motion";
 import BaseLayout from "./BaseLayout";
@@ -37,6 +42,8 @@ const ArchivePage = () => {
   const [sortOrder, setSortOrder] = useState("desc");
   const [totalEmails, setTotalEmails] = useState(0);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
+  const [emailToDelete, setEmailToDelete] = useState(null);
 
   const isMobile = useMediaQuery("(max-width:900px)");
   const archiveRef = useRef(null);
@@ -111,8 +118,8 @@ const ArchivePage = () => {
   };
 
   const handleDeleteEmail = (emailId) => {
-    // Placeholder for delete email functionality
-    console.log("Delete email:", emailId);
+    setEmailToDelete(emailId);
+    setDeleteConfirmationOpen(true);
   };
 
   const cardVariants = {
@@ -129,6 +136,63 @@ const ArchivePage = () => {
       pageTitle="Archive"
       pageSubtitle="View and manage archived emails"
     >
+      <Dialog
+        open={deleteConfirmationOpen}
+        onClose={() => setDeleteConfirmationOpen(false)}
+        PaperProps={{
+          style: {
+            backgroundColor: "#242423",
+            color: "white",
+            boxShadow: "none",
+          },
+        }}
+      >
+        <DialogTitle sx={{ color: "white" }}>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" sx={{ color: "white" }}>
+            Are you sure you want to delete this email?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setDeleteConfirmationOpen(false)}
+            sx={{
+              color: "white",
+              borderColor: "white",
+              "&:hover": {
+                backgroundColor: "rgba(255, 255, 255, 0.1)",
+              },
+            }}
+            variant="outlined"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={async () => {
+              try {
+                await axios.delete(
+                  `http://192.168.0.112:5000/delete_email/${emailToDelete}`
+                );
+                console.log("Email deleted successfully");
+                setDeleteConfirmationOpen(false);
+                fetchEmails();
+              } catch (error) {
+                console.error("Error deleting email:", error);
+              }
+            }}
+            sx={{
+              backgroundColor: "white",
+              color: "black",
+              "&:hover": {
+                backgroundColor: "rgba(255, 255, 255, 0.8)",
+              },
+            }}
+            variant="contained"
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
       <Box ref={archiveRef}>
         {isMobile ? (
           <>
@@ -170,7 +234,7 @@ const ArchivePage = () => {
                     <IconButton onClick={() => handleViewDetails(email.id)}>
                       <VisibilityIcon sx={{ color: "white" }} />
                     </IconButton>
-                    <IconButton onClick={() => handleReply(email.id)} disabled>
+                    {/* <IconButton onClick={() => handleReply(email.id)} disabled>
                       <ReplyIcon sx={{ color: "grey" }} />
                     </IconButton>
                     <IconButton
@@ -184,10 +248,10 @@ const ArchivePage = () => {
                       disabled
                     >
                       <FolderIcon sx={{ color: "grey" }} />
-                    </IconButton>
-                    <IconButton onClick={() => handleDeleteEmail(email.id)}>
+                    </IconButton> */}
+                    {/* <IconButton onClick={() => handleDeleteEmail(email.id)}>
                       <DeleteIcon sx={{ color: "white" }} />
-                    </IconButton>
+                    </IconButton> */}
                   </CardActions>
                 </Card>
               </motion.div>
@@ -293,7 +357,7 @@ const ArchivePage = () => {
                         <IconButton onClick={() => handleViewDetails(email.id)}>
                           <VisibilityIcon sx={{ color: "white" }} />
                         </IconButton>
-                        <IconButton
+                        {/* <IconButton
                           onClick={() => handleReply(email.id)}
                           disabled
                         >
@@ -310,10 +374,10 @@ const ArchivePage = () => {
                           disabled
                         >
                           <FolderIcon sx={{ color: "grey" }} />
-                        </IconButton>
-                        <IconButton onClick={() => handleDeleteEmail(email.id)}>
+                        </IconButton> */}
+                        {/* <IconButton onClick={() => handleDeleteEmail(email.id)}>
                           <DeleteIcon sx={{ color: "white" }} />
-                        </IconButton>
+                        </IconButton> */}
                       </TableCell>
                     </TableRow>
                   ))}

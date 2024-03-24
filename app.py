@@ -235,6 +235,27 @@ def delete_account(account_id):
     conn.close()
     return render_template('delete_account.html', account=account)
 
+@app.route('/delete_email/<int:email_id>', methods=['DELETE'])
+def delete_email(email_id):
+    conn = sqlite3.connect('email_archive.db')
+    cursor = conn.cursor()
+
+    try:
+        # Delete the email from the emails table
+        cursor.execute("DELETE FROM emails WHERE id = ?", (email_id,))
+
+        # Delete the associated attachments from the attachments table
+        cursor.execute("DELETE FROM attachments WHERE email_id = ?", (email_id,))
+
+        conn.commit()
+        conn.close()
+
+        return jsonify({'message': 'Email deleted successfully'}), 200
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        return jsonify({'error': 'An error occurred while deleting the email'}), 500
+    
 @app.route('/search_emails', methods=['GET', 'POST'])
 def search_emails():
     if request.method == 'POST':
