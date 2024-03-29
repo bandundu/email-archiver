@@ -409,6 +409,7 @@ def run_archiver_thread():
 if __name__ == '__main__':
     # Check if the Fernet key exists in the environment variables
     fernet_key = os.getenv('SECRET_KEY')
+    print(fernet_key)
     if not fernet_key:
         # Generate a new Fernet key
         fernet_key = Fernet.generate_key().decode()
