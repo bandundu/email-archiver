@@ -6,6 +6,9 @@ import threading
 from dotenv import load_dotenv
 from email_archiver import initialize_database
 from flask_cors import CORS
+import os
+from cryptography.fernet import Fernet
+
 
 # Load environment variables from .env file
 load_dotenv()
@@ -47,6 +50,11 @@ def index():
     return render_template('index.html', latest_emails=latest_emails, total_emails=total_emails,
                            total_accounts=total_accounts, total_attachments=total_attachments)
 
+
+@app.route('/fernet_key')
+def get_fernet_key():
+    fernet_key = os.getenv('SECRET_KEY')
+    return jsonify({'fernet_key': fernet_key})
 
 @app.route('/stats')
 def get_stats():
@@ -399,6 +407,15 @@ def run_archiver_thread():
     email_archiver.run_archiver()
 
 if __name__ == '__main__':
+    # Check if the Fernet key exists in the environment variables
+    fernet_key = os.getenv('SECRET_KEY')
+    if not fernet_key:
+        # Generate a new Fernet key
+        fernet_key = Fernet.generate_key().decode()
+        os.environ['SECRET_KEY'] = fernet_key
+        print(f"Generated Fernet key: {fernet_key}")
+    else:
+        print(f"Using existing Fernet key: {fernet_key}")
     # Initialize the database
     initialize_database()
     # Start the email archiving thread

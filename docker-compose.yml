@@ -3,11 +3,12 @@ version: '3'
 services:
   web:
     # Use bandundu/briefbox:latest for standard architectures or bandundu/briefbox:latest-arm for ARMv7 support (e.g., Raspberry Pi)
-    image: bandundu/briefbox:latest
+    build: .
     ports:
       - "3000:3000"
+      - "5000:5000"
     volumes:
-      - .:/app
+      - ./email_archive.db:/app/email_archive.db
     environment:
       - FLASK_ENV=development
       - FLASK_APP=app.py
