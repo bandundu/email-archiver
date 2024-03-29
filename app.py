@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from email_archiver import initialize_database
 from flask_cors import CORS
 import os
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken
 
 
 # Load environment variables from .env file
@@ -407,21 +407,28 @@ def run_archiver_thread():
     email_archiver.run_archiver()
 
 if __name__ == '__main__':
-    # Check if the Fernet key exists in the environment variables
-    fernet_key = os.getenv('SECRET_KEY')
-    if not fernet_key:
-        # Generate a new Fernet key
-        fernet_key = Fernet.generate_key().decode()
-        os.environ['SECRET_KEY'] = fernet_key
-        print(f"Generated Fernet key: {fernet_key}")
+    # Read the Fernet key from the file
+    fernet_key_file = os.getenv('SECRET_KEY_FILE')
+    if os.path.exists(fernet_key_file):
+        with open(fernet_key_file, 'r') as file:
+            fernet_key = file.read().strip()
     else:
-        print(f"Using existing Fernet key: {fernet_key}")
+        # Generate a new Fernet key and save it to the file
+        fernet_key = Fernet.generate_key().decode()
+        with open(fernet_key_file, 'w') as file:
+            file.write(fernet_key)
+        print(f"Generated Fernet key: {fernet_key}")
+
     # Initialize the database
-    initialize_database()
+    try:
+        initialize_database()
+    except InvalidToken:
+        print("Error: The provided Fernet key is incompatible with the existing database.")
+        exit(1)
     # Start the email archiving thread
     archiver_thread = threading.Thread(target=run_archiver_thread)
     archiver_thread.daemon = True
     archiver_thread.start()
     
     # Run the Flask app
-    app.run(host='127.0.0.1', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
