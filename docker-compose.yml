@@ -7,11 +7,11 @@ services:
       - "5000:5000"
     volumes:
       - ./email_archive.db:/app/email_archive.db
-      - ./fernet_key:/app/fernet_key
+      - ./fernet_key:/app/fernet_key_file
     environment:
       - FLASK_ENV=development
       - FLASK_APP=app.py
-      - SECRET_KEY_FILE=/app/fernet_key
+      - SECRET_KEY_FILE=/app/fernet_key_file
 
   frontend:
     image: bandundu/briefbox-frontend:latest

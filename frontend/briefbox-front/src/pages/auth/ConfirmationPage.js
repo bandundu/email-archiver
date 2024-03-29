@@ -57,7 +57,10 @@ function EmailConfirmationPage() {
 
   const confirmEmail = async (data) => {
     try {
-      const response = await axios.post('http://127.0.0.1:5000/confirm-email', data);
+      const response = await axios.post(
+        "http://127.0.0.1:5000/confirm-email",
+        data
+      );
       if (response.data.success) {
         toast.success("Email confirmed successfully!", {style: toastStyle});
         navigate('/account-setup');
