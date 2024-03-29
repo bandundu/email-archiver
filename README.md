@@ -6,9 +6,8 @@
 
 Briefbox is a powerful tool for archiving emails from multiple IMAP and POP3 accounts. It provides a user-friendly web interface for managing email accounts, searching archived emails, and viewing email details along with attachments. One of the standout features of Briefbox is its advanced search functionality, which allows users to quickly find specific emails using various criteria.
 
-![grafik](https://github.com/bandundu/email-archiver/assets/41874924/1340390c-ee1f-491a-a5b8-f4837a62f1e6)
-![grafik](https://github.com/bandundu/email-archiver/assets/41874924/2fa28f1a-1ab1-4228-99ca-70390c00c228)
-![grafik](https://github.com/bandundu/email-archiver/assets/41874924/ed698973-e855-47d2-b388-9addac26d53a)
+![grafik](https://github.com/bandundu/email-archiver/assets/41874924/6b0b06f3-0f49-4f55-82a9-3471c7ee0c42)
+![grafik](https://github.com/bandundu/email-archiver/assets/41874924/856f4f56-6016-476b-857f-f63fe37706aa)
 
 
 ## Features
@@ -66,7 +65,7 @@ docker-compose pull
 docker-compose up
 ```
 
-5. Access the web interface by opening a web browser and navigating to `http://localhost:5000`.
+5. Access the web interface by opening a web browser and navigating to `http://localhost:3000`.
 
 6. Use the web interface to add email accounts, search for emails, and view email details.
 
