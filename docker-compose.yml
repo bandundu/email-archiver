@@ -3,7 +3,7 @@ version: '3'
 services:
   web:
     # Use bandundu/briefbox:latest for standard architectures or bandundu/briefbox:latest-arm for ARMv7 support (e.g., Raspberry Pi)
-    build: .
+    image: bandundu/briefbox:latest
     ports:
       - "3000:3000"
       - "5000:5000"
