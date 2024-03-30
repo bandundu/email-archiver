@@ -59,7 +59,7 @@ from email_archiver import initialize_database
 app = Flask(__name__)
 cors = CORS(
     app,
-    resources={r"/*": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]}},
+    origins="http://0.0.0.0:3000",
     supports_credentials=True,
 )
 
@@ -75,11 +75,7 @@ def format_date(date_str):
 @app.route("/fernet_key")
 def get_fernet_key():
     fernet_key = os.getenv("SECRET_KEY")
-    response = jsonify({"fernet_key": fernet_key})
-    response.headers.add("Access-Control-Allow-Headers", "*")
-    response.headers.add("Access-Control-Allow-Methods", "*")
-    response.headers.add("Access-Control-Allow-Origin", "*")
-    return response
+    return jsonify({"fernet_key": fernet_key})
 
 
 @app.route("/stats")
@@ -105,10 +101,7 @@ def get_stats():
         "totalAttachments": total_attachments,
     }
 
-    # create response and set CORS headers
-    response = jsonify(stats)
-    response.headers.add("Access-Control-Allow-Origin", "*")
-    return response
+    return jsonify(stats)
 
 
 @app.route("/latest-emails")
@@ -130,10 +123,7 @@ def latest_emails():
         for email in latest_emails
     ]
 
-    # create response and set CORS headers
-    response = jsonify(emails_data)
-    response.headers.add("Access-Control-Allow-Origin", "*")
-    return response
+    return jsonify(emails_data)
 
 
 @app.route("/create_account", methods=["POST", "OPTIONS"])
