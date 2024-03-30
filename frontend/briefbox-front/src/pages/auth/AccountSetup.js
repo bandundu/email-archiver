@@ -62,12 +62,18 @@ const AccountSetup = () => {
         }
     
         try {
-            const response = await axios.post('http://127.0.0.1:5000/account-setup', formData, {
+            const response = await axios.post(
+              "http://0.0.0.0:5000/account-setup",
+              formData,
+              {
                 headers: {
-                    'Content-Type': 'multipart/form-data',
-                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`, // Add JWT token here
+                  "Content-Type": "multipart/form-data",
+                  Authorization: `Bearer ${localStorage.getItem(
+                    "access_token"
+                  )}`, // Add JWT token here
                 },
-            });
+              }
+            );
             setSuccess(true);
             setTimeout(() => {
                 navigate('/dashboard'); // Redirect to dashboard

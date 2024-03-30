@@ -20,16 +20,6 @@ from jwt import InvalidTokenError
 # Load environment variables from .env file
 load_dotenv()
 
-# Check if the Fernet key exists in the environment variables
-fernet_key = os.getenv('SECRET_KEY')
-if not fernet_key:
-    # Generate a new Fernet key
-    fernet_key = Fernet.generate_key().decode()
-    os.environ['SECRET_KEY'] = fernet_key
-    print(f"Generated Fernet key: {fernet_key}")
-else:
-    print(f"Using existing Fernet key: {fernet_key}")
-
 # Load the secret key from the environment variable
 secret_key = os.environ.get('SECRET_KEY').encode()
 # In email_archiver.py

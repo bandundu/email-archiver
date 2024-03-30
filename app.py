@@ -1,21 +1,56 @@
-from flask import Flask, render_template, request, redirect, url_for, make_response, jsonify
-import email_archiver
+from flask import Flask, render_template, request, redirect, url_for, make_response, jsonify, after_this_request
+
 import sqlite3
 from dateutil import parser
 import threading
 from dotenv import load_dotenv
-from email_archiver import initialize_database
 from flask_cors import CORS
 import os
 from cryptography.fernet import Fernet, InvalidToken
+import re
 
-
-# Load environment variables from .env file
+# Try to load environment variables from .env file
 load_dotenv()
+
+# Read the SECRET_KEY from the environment variables
+secret_key = os.getenv('SECRET_KEY')
+
+if secret_key:
+    # If SECRET_KEY is present and not empty, use it as the Fernet key
+    fernet_key = secret_key
+    print(f"Using preset Fernet key: {fernet_key}")
+else:
+    # If SECRET_KEY is empty or not present, generate a new Fernet key
+    fernet_key = Fernet.generate_key().decode()
+    print(f"Generated new Fernet key: {fernet_key}")
+
+    # Read the contents of the .env file
+    if os.path.exists('.env'):
+        with open('.env', 'r') as f:
+            env_contents = f.read()
+    else:
+        env_contents = ''
+
+    # Check if SECRET_KEY exists in the .env file
+    if 'SECRET_KEY=' in env_contents:
+        # Update the existing SECRET_KEY with the generated Fernet key
+        updated_contents = re.sub(r'SECRET_KEY=.*', f'SECRET_KEY={fernet_key}', env_contents)
+    else:
+        # Append the new SECRET_KEY to the .env file
+        updated_contents = env_contents + f'\nSECRET_KEY={fernet_key}'
+
+    # Write the updated contents back to the .env file
+    with open('.env', 'w') as f:
+        f.write(updated_contents)
+        
+import email_archiver
+from email_archiver import initialize_database
+
 
 app = Flask(__name__)
 #CORS(app)  # Enable CORS for all routes and origins
 cors = CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]}}, supports_credentials=True)
+
 
 @app.template_filter('format_date')
 def format_date(date_str):
@@ -110,8 +145,17 @@ def latest_emails():
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
-@app.route('/create_account', methods=['GET', 'POST'])
+@app.route('/create_account', methods=['GET', 'POST', 'OPTIONS'])
 def create_account():
+
+    if request.method == 'OPTIONS':
+        # Preflight request. Reply with the CORS headers.
+        response = make_response()
+        response.headers.add('Access-Control-Allow-Headers', '*')
+        response.headers.add('Access-Control-Allow-Methods', '*')
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
+    
     if request.method == 'POST':
         # Check if the request content type is JSON
         if request.is_json:
@@ -407,18 +451,6 @@ def run_archiver_thread():
     email_archiver.run_archiver()
 
 if __name__ == '__main__':
-    # Read the Fernet key from the file
-    fernet_key_file = os.getenv('SECRET_KEY_FILE')
-    if os.path.exists(fernet_key_file):
-        with open(fernet_key_file, 'r') as file:
-            fernet_key = file.read().strip()
-    else:
-        # Generate a new Fernet key and save it to the file
-        fernet_key = Fernet.generate_key().decode()
-        with open(fernet_key_file, 'w') as file:
-            file.write(fernet_key)
-        print(f"Generated Fernet key: {fernet_key}")
-
     # Initialize the database
     try:
         initialize_database()
