@@ -6,7 +6,7 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      - ./email_archive.db:/app/email_archive.db
+      - ./data/email_archive.db:/app/data/email_archive.db
       - ./fernet_key:/app/fernet_key_file
     environment:
       - FLASK_ENV=development

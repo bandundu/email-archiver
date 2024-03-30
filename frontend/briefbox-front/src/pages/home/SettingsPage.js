@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Typography,
   Box,
@@ -7,12 +7,44 @@ import {
   Button,
   Accordion,
   AccordionSummary,
+  IconButton,
+  InputAdornment,
   AccordionDetails,
 } from "@mui/material";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import BaseLayout from "./BaseLayout";
 
 const SettingsPage = () => {
+
+  const [secretKey, setSecretKey] = useState("");
+  const [showSecretKey, setShowSecretKey] = useState(false);
+
+  const toggleSecretKeyVisibility = () => {
+    setShowSecretKey((prevState) => !prevState);
+  };
+
+  useEffect(() => {
+    const fetchSecretKey = async () => {
+      try {
+        const response = await fetch("http://0.0.0.0:5000/fernet_key");
+        if (response.ok) {
+          const data = await response.json();
+          setSecretKey(data.fernet_key);
+        } else {
+          throw new Error("Error fetching secret key");
+        }
+      } catch (error) {
+        console.error("Error fetching secret key:", error);
+      }
+    };
+  
+    fetchSecretKey();
+  }, []);
+
+  
   return (
     <BaseLayout pageTitle="Settings">
       <Box sx={{ maxWidth: "600px" }}>
@@ -39,17 +71,17 @@ const SettingsPage = () => {
               alt="Charles David Mupende"
               src="https://lh3.googleusercontent.com/a/ACg8ocLuc1kxmApUBEa1CAqP6v4ADaU7oF3Jgy6k7qjG1hxVepos=s96-c"
             />
-            <TextField
-              label="Picture"
-              variant="outlined"
-              size="small"
-              defaultValue="https://lh3.googleusercontent.com/a/ACg8ocLuc1kxmApUBEa1CAqP6v4ADaU7oF3Jgy6k7qjG1hxVepos=s96-c"
-              sx={{ marginRight: "20px", width: "100%" }}
-              InputLabelProps={{
-                style: { color: "grey" },
-                focused: { color: "blue" },
-              }}
-            />
+<TextField
+  label="Picture"
+  variant="outlined"
+  size="small"
+  defaultValue="https://lh3.googleusercontent.com/a/ACg8ocLuc1kxmApUBEa1CAqP6v4ADaU7oF3Jgy6k7qjG1hxVepos=s96-c"
+  sx={{ marginRight: "20px", width: "100%" }}
+  InputLabelProps={{
+    style: { color: "grey" },
+    shrink: true,
+  }}
+/>
           </Box>
           <Box
             sx={{
@@ -161,58 +193,54 @@ const SettingsPage = () => {
           </Accordion>
 
           <Accordion sx={{ backgroundColor: "#181c1c", color: "white" }}>
-            <AccordionSummary
-              expandIcon={<ExpandMoreIcon sx={{ color: "white" }} />}
-              sx={{ backgroundColor: "#181c1c" }}
-            >
-              <Typography>Two-Factor Authentication</Typography>
-            </AccordionSummary>
-            <AccordionDetails sx={{ backgroundColor: "#181c1c" }}>
-              <Typography
-                variant="body1"
-                sx={{ marginBottom: "20px", color: "grey" }}
-              >
-                <strong>
-                  Two-factor authentication is currently disabled.
-                </strong>{" "}
-                You can enable it by adding an authenticator app to your
-                account.
-              </Typography>
-              <Button
-                variant="outlined"
-                color="primary"
-                sx={{ borderColor: "grey", color: "white" }}
-              >
-                Enable 2FA
-              </Button>
-            </AccordionDetails>
-          </Accordion>
-        </Box>
-        <Box sx={{ marginBottom: "40px" }}>
-          <Typography variant="h6" sx={{ marginBottom: "10px" }}>
-            Profile
-          </Typography>
-          <Typography
-            variant="body1"
-            sx={{ marginBottom: "20px", color: "grey" }}
+          <AccordionSummary
+  expandIcon={<ExpandMoreIcon sx={{ color: "white" }} />}
+  sx={{ backgroundColor: "#181c1c" }}
+>
+  <Typography>Secret Key</Typography>
+</AccordionSummary>
+<AccordionDetails sx={{ backgroundColor: "#181c1c" }}>
+  <Typography variant="body1" sx={{ marginBottom: "10px", color: "grey" }}>
+    Your secret key is:
+  </Typography>
+  <TextField
+    label="Secret Key"
+    variant="outlined"
+    size="small"
+    type={showSecretKey ? "text" : "password"}
+    value={secretKey}
+    InputProps={{
+      readOnly: true,
+      style: { color: "white" },
+      endAdornment: (
+        <InputAdornment position="end">
+          <IconButton onClick={toggleSecretKeyVisibility} edge="end">
+            {showSecretKey ? (
+              <VisibilityOffIcon sx={{ color: "white" }} />
+            ) : (
+              <VisibilityIcon sx={{ color: "white" }} />
+            )}
+          </IconButton>
+          <IconButton
+            onClick={() => navigator.clipboard.writeText(secretKey)}
+            edge="end"
           >
-            Here, you can update your profile to customize and personalize your
-            experience.
-          </Typography>
-          {/* Add profile settings fields */}
-        </Box>
-        <Box sx={{ marginBottom: "40px" }}>
-          <Typography variant="h6" sx={{ marginBottom: "10px" }}>
-            OpenAI Integration
-          </Typography>
-          <Typography
-            variant="body1"
-            sx={{ marginBottom: "20px", color: "grey" }}
-          >
-            You can make use of the OpenAI API to help you generate content, or
-            improve your writing while composing your resume.
-          </Typography>
-          {/* Add OpenAI integration settings fields */}
+            <ContentCopyIcon sx={{ color: "white" }} />
+          </IconButton>
+        </InputAdornment>
+      ),
+    }}
+    sx={{
+      width: "100%",
+      backgroundColor: "#0000001f",
+      borderRadius: 1,
+    }}
+  />
+  <Typography variant="body2" sx={{ marginTop: "10px", color: "grey" }}>
+    Keep this secret key secure. It is used for encryption and decryption of your data.
+  </Typography>
+</AccordionDetails>
+</Accordion>
         </Box>
         <Box sx={{ marginBottom: "40px" }}>
           <Typography variant="h6" sx={{ marginBottom: "10px" }}>

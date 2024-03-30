@@ -3,6 +3,7 @@
 .env
 __pycache__
 .venv
+.dockerignore
 tests
 frontend/briefbox-front/src/pages/dump_files.py
 frontend/briefbox-front/src/pages/output.txt
