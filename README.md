@@ -1,10 +1,14 @@
 🚨🚨🚨 IMPORTANT DISCLAIMER 🚨🚨🚨
 
-**This project is currently still in early development and lacks proper authentication.** It is **NOT** recommended to expose this application to the public as you will be providing the world your emails. Use at your own discretion and only in a controlled environment for now.
+**This project is currently in early development, and things may break unexpectedly. It also lacks proper authentication.** It is **NOT** recommended to expose this application to the internet, as you will be providing the world access to your emails. Use at your own discretion and only in a controlled environment for now.
+
+While feedback and contributions are appreciated during this early development phase, please note that this project is not yet suitable for use as a stable email backup solution. The first stable release is targeted for the end of the year. If you require a reliable email archiving solution, it is advisable to wait until the stable release.
+
+**Use at your own risk and in a controlled environment only.**
 
 # Briefbox
 
-Briefbox is a powerful tool for archiving emails from multiple IMAP and POP3 accounts. It provides a user-friendly web interface for managing email accounts, searching archived emails, and viewing email details along with attachments. One of the standout features of Briefbox is its advanced search functionality, which allows users to quickly find specific emails using various criteria.
+Briefbox is a tool for archiving emails from multiple IMAP and POP3 accounts. It provides a user-friendly web interface for managing email accounts, searching archived emails, and viewing email details along with attachments. One of the standout features of Briefbox is its advanced search functionality, which allows users to quickly find specific emails using various criteria.
 
 ![grafik](https://github.com/bandundu/email-archiver/assets/41874924/6b0b06f3-0f49-4f55-82a9-3471c7ee0c42)
 ![grafik](https://github.com/bandundu/email-archiver/assets/41874924/856f4f56-6016-476b-857f-f63fe37706aa)
@@ -35,10 +39,6 @@ Briefbox is a powerful tool for archiving emails from multiple IMAP and POP3 acc
 
 - Docker
 - Docker Compose
-
-Here's the updated Setup and Usage section for your README:
-
-Here's the updated Setup and Usage section in Markdown format:
 
 ## Setup and Usage
 
@@ -90,7 +90,3 @@ docker-compose up
 ## Contributing
 
 Contributions are welcome! If you have any ideas, suggestions, or bug reports, please open an issue or submit a pull request. Make sure to follow the project's code of conduct.
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more information.
