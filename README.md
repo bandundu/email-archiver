@@ -38,36 +38,47 @@ Briefbox is a powerful tool for archiving emails from multiple IMAP and POP3 acc
 
 Here's the updated Setup and Usage section for your README:
 
+Here's the updated Setup and Usage section in Markdown format:
+
 ## Setup and Usage
 
-1. Clone the repository:
+1. Create a `docker-compose.yml` file in a folder of your chosing with the following content:
 
-```bash
-git clone https://github.com/bandundu/email-archiver.git
-cd email-archiver
+```yaml
+version: '3'
+
+services:
+  backend:
+    # latest-arm for ARM devices like Raspberry Pi
+    image: bandundu/briefbox-backend:latest
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./:/app/data
+    environment:
+      - FLASK_ENV=development
+      - FLASK_APP=app.py
+
+  frontend:
+    # latest-arm for ARM devices like Raspberry Pi
+    image: bandundu/briefbox-frontend:latest
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
 ```
 
-2. Generate the Fernet key and populate the `.env` file:
+> **Note:** For ARM devices like Raspberry Pi, use the `latest-arm` tag for both backend and frontend images.
 
-```bash
-make generate-key
-```
-
-3. Pull the pre-built Docker image from Docker Hub:
-
-```bash
-docker-compose pull
-```
-
-4. Run the Docker containers:
+2. Run the following command to start the containers:
 
 ```bash
 docker-compose up
 ```
 
-5. Access the web interface by opening a web browser and navigating to `http://localhost:3000`.
+3. Access the web interface by opening a web browser and navigating to `http://localhost:3000`.
 
-6. Use the web interface to add email accounts, search for emails, and view email details.
+4. Use the web interface to add email accounts, search for emails, and view email details.
 
 ## Future Enhancements
 
