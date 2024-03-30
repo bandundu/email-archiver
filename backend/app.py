@@ -158,18 +158,30 @@ def create_account():
 
         # Validate the extracted data
         if not all([email, password, protocol.lower(), server, port]):
-            return jsonify({"error": "Missing required fields"}), 400
+            response = jsonify({"error": "Missing required fields"})
+            response.headers.add("Access-Control-Allow-Headers", "*")
+            response.headers.add("Access-Control-Allow-Methods", "*")
+            response.headers.add("Access-Control-Allow-Origin", "*")
+            return response, 400
 
         conn = sqlite3.connect("data/email_archive.db")
         try:
             # Assume email_archiver.create_account function exists and handles the DB operations
             email_archiver.create_account(conn, email, password, protocol, server, port)
             conn.close()
-            return jsonify({"message": "Account created successfully"}), 200
+            response = jsonify({"message": "Account created successfully"})
+            response.headers.add("Access-Control-Allow-Headers", "*")
+            response.headers.add("Access-Control-Allow-Methods", "*")
+            response.headers.add("Access-Control-Allow-Origin", "*")
+            return response, 201
         except sqlite3.IntegrityError:
             conn.close()
             error_message = f"An account with email '{email}' already exists. Please use a different email."
-            return jsonify({"error": error_message}), 400
+            response = jsonify({"error": error_message})
+            response.headers.add("Access-Control-Allow-Headers", "*")
+            response.headers.add("Access-Control-Allow-Methods", "*")
+            response.headers.add("Access-Control-Allow-Origin", "*")
+            return response, 400
 
 
 @app.route("/emails")
@@ -214,6 +226,8 @@ def get_emails():
         jsonify({"emails": email_data, "total_emails": total_emails})
     )
     response.headers.add("Access-Control-Allow-Origin", "*")
+    response.headers.add("Access-Control-Allow-Headers", "*")
+    response.headers.add("Access-Control-Allow-Methods", "*")
     return response
 
 
@@ -236,6 +250,8 @@ def get_accounts():
     # create response and set CORS headers
     response = jsonify(accounts_data)
     response.headers.add("Access-Control-Allow-Origin", "*")
+    response.headers.add("Access-Control-Allow-Headers", "*")
+    response.headers.add("Access-Control-Allow-Methods", "*")
     return response
 
 
