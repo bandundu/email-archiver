@@ -27,7 +27,7 @@ function ResetPasswordPage() {
         try {
             // Send a POST request to your backend
             const response = await axios.post(
-              "http://backend:5000/reset-password",
+              "http://127.0.0.1:5000/reset-password",
               { token, password }
             );
 

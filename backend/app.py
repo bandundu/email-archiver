@@ -4,17 +4,17 @@ import sqlite3
 from dateutil import parser
 import threading
 from dotenv import load_dotenv
-from flask_cors import CORS
+# from flask_cors import CORS
 import os
 from cryptography.fernet import Fernet, InvalidToken
 import re
 
 app = Flask(__name__)
-cors = CORS(
-    app,
-    origins="*",
-    supports_credentials=True,
-)
+# cors = CORS(
+#     app,
+#     origins="*",
+#     supports_credentials=True,
+# )
 
 
 # Try to load environment variables from .env file

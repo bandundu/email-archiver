@@ -37,7 +37,7 @@ const AccountsPage = () => {
 
   const fetchAccounts = async () => {
     try {
-      const response = await axios.get("http://backend:5000/get_accounts");
+      const response = await axios.get("http://127.0.0.1:5000/get_accounts");
       const updatedAccounts = response.data.map((account) => ({
         ...account,
         protocol: account.protocol.toUpperCase(),
@@ -51,7 +51,7 @@ const AccountsPage = () => {
   const handleAddAccount = async () => {
     try {
       const response = await axios.post(
-        "http://backend:5000/create_account",
+        "http://127.0.0.1:5000/create_account",
         newAccount
       );
       if (response.status === 200) {
@@ -79,7 +79,7 @@ const AccountsPage = () => {
   const handleUpdateAccount = async () => {
     try {
       const response = await axios.post(
-        `http://backend:5000/update_account/${editAccountId}`,
+        `http://127.0.0.1:5000/update_account/${editAccountId}`,
         newAccount
       );
       if (response.status === 200) {
@@ -104,7 +104,7 @@ const AccountsPage = () => {
   const handleDeleteAccount = async (accountId) => {
     try {
       const response = await axios.post(
-        `http://backend:5000/delete_account/${accountId}`
+        `http://127.0.0.1:5000/delete_account/${accountId}`
       );
       if (response.status === 200) {
         const updatedAccounts = accounts.filter((acc) => acc.id !== accountId);
