@@ -9,6 +9,14 @@ import os
 from cryptography.fernet import Fernet, InvalidToken
 import re
 
+app = Flask(__name__)
+cors = CORS(
+    app,
+    origins="http://0.0.0.0:3000",
+    supports_credentials=True,
+)
+
+
 # Try to load environment variables from .env file
 load_dotenv()
 
@@ -54,14 +62,6 @@ else:
 
 import email_archiver as email_archiver
 from email_archiver import initialize_database
-
-
-app = Flask(__name__)
-cors = CORS(
-    app,
-    origins="http://0.0.0.0:3000",
-    supports_credentials=True,
-)
 
 
 @app.template_filter("format_date")
