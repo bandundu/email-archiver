@@ -100,8 +100,10 @@ def get_stats():
         "totalAccounts": total_accounts,
         "totalAttachments": total_attachments,
     }
-
-    return jsonify(stats)
+    response = make_response(jsonify(stats))
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    return response
+    # return jsonify(stats)
 
 
 @app.route("/latest-emails")
