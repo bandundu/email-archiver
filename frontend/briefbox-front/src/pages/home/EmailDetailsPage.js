@@ -320,7 +320,8 @@ const EmailDetailsPage = () => {
                 position: "sticky",
                 bottom: 0,
                 backgroundColor: "#000000",
-                padding: "10px 0",
+                padding: "1px 0", // Adjust the padding to make the bar smaller
+                height: "10px", // Adjust the height to make the bar smaller
               }}
             >
               <Fade in={currentEmailIndex > 1}>

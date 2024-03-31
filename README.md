@@ -14,27 +14,6 @@ Briefbox is a tool for archiving emails from multiple IMAP and POP3 accounts. It
 ![grafik](https://github.com/bandundu/email-archiver/assets/41874924/856f4f56-6016-476b-857f-f63fe37706aa)
 
 
-## Features
-
-- Add, update, and delete IMAP and POP3 email accounts
-- Automatically fetch and archive emails from configured accounts
-- **Powerful search functionality:**
-  - Search archived emails based on subject, sender, recipients, or body content
-  - Perform case-insensitive searches for more accurate results
-  - Search for emails by date using flexible date formats (e.g., "26 Jan 2024", "2024-01-26", "January 26, 2024")
-  - **Search for emails within a specific date range using the format "DD MMM YYYY - DD MMM YYYY" (e.g., "26 Jan 2024 - 28 Jan 2024")**
-  - Use multiple search terms to narrow down results
-  - Examples:
-    - Search for emails from a specific sender: `john@example.com`
-    - Find emails with a specific subject: `"Project Update"`
-    - Search for emails containing certain keywords in the body: `meeting agenda`
-    - Combine multiple criteria: `from:john@example.com subject:"Project Update" meeting`
-    - Search for emails by date: `26 Jan 2024`, `2024-01-26`, `January 26, 2024`
-    - **Search for emails within a date range: `26 Jan 2024 - 28 Jan 2024`**
-- View email details, including subject, sender, recipients, date, and body
-- Download email attachments
-- Periodic email archiving to keep the database up to date
-
 ## Prerequisites
 
 - Docker
