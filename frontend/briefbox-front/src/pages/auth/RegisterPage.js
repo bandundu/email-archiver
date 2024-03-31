@@ -164,7 +164,7 @@ function RegisterPage() {
   
     try {
       const response = await axios.post(
-        "http://0.0.0.0:5000/register",
+        "http://backend:5000/register",
         userData,
         { timeout: 5000 }
       );

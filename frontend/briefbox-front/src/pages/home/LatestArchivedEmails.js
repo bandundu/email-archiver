@@ -20,7 +20,7 @@ function LatestArchivedEmails() {
   useEffect(() => {
     const fetchLatestEmails = async () => {
       try {
-        const response = await axios.get("http://0.0.0.0:5000/emails", {
+        const response = await axios.get("http://backend:5000/emails", {
           params: {
             page: 1,
             per_page: 10,

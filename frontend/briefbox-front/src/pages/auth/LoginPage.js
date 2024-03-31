@@ -66,7 +66,7 @@ function LoginRegisterPage() {
     };
 
     try {
-      const response = await axios.post("http://0.0.0.0:5000/login", userData);
+      const response = await axios.post("http://backend:5000/login", userData);
 
       if (response.status === 200 && response.data.access_token) {
         console.log('Logged in successfully');

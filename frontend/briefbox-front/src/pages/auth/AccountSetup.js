@@ -63,7 +63,7 @@ const AccountSetup = () => {
     
         try {
             const response = await axios.post(
-              "http://0.0.0.0:5000/account-setup",
+              "http://backend:5000/account-setup",
               formData,
               {
                 headers: {
