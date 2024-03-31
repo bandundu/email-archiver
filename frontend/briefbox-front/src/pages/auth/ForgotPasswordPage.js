@@ -15,7 +15,7 @@ function ForgotPasswordPage() {
         try {
             // Send a POST request to your backend
             const response = await axios.post(
-              "http://127.0.0.1:5000/forgot-password",
+              "http://backend:5000/forgot-password",
               { email }
             );
 
