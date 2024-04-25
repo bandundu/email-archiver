@@ -157,38 +157,45 @@ def fetch_and_archive_emails(
             email_message = email.message_from_bytes(raw_email)
 
             # Extract email metadata
-            subject_parts = email.header.decode_header(email_message["Subject"])
-            decoded_subject_parts = []
-            for part, encoding in subject_parts:
-                if isinstance(part, bytes):
-                    decoded_subject_parts.append(part.decode(encoding or "utf-8"))
-                else:
-                    decoded_subject_parts.append(part)
-            subject = "".join(decoded_subject_parts)
+            if email_message["Subject"] is not None:
+                subject_parts = email.header.decode_header(email_message["Subject"])
+                decoded_subject_parts = []
+                for part, encoding in subject_parts:
+                    if isinstance(part, bytes):
+                        decoded_subject_parts.append(part.decode(encoding or "utf-8"))
+                    else:
+                        decoded_subject_parts.append(part)
+                subject = "".join(decoded_subject_parts)
+            else:
+                subject = ""  # Set subject to an empty string if 'Subject' header is missing
 
-            sender_parts = email.header.decode_header(email_message["From"])
-            decoded_sender_parts = []
-            for part, encoding in sender_parts:
-                if isinstance(part, bytes):
-                    decoded_sender_parts.append(part.decode(encoding or "utf-8"))
-                else:
-                    decoded_sender_parts.append(part)
-            sender = "".join(decoded_sender_parts)
 
-            # Check if 'To' header is None before decoding
+            # Check if 'From' header exists before decoding
+            if email_message["From"] is not None:
+                sender_parts = email.header.decode_header(email_message["From"])
+                decoded_sender_parts = []
+                for part, encoding in sender_parts:
+                    if isinstance(part, bytes):
+                        decoded_sender_parts.append(part.decode(encoding or "utf-8"))
+                    else:
+                        decoded_sender_parts.append(part)
+                sender = "".join(decoded_sender_parts)
+            else:
+                sender = ""  # Set sender to an empty string if 'From' header is missing
+
+            # Check if 'To' header exists before decoding
             if email_message["To"] is not None:
                 recipients_parts = email.header.decode_header(email_message["To"])
                 decoded_recipients_parts = []
                 for part, encoding in recipients_parts:
                     if isinstance(part, bytes):
-                        decoded_recipients_parts.append(
-                            part.decode(encoding or "utf-8")
-                        )
+                        decoded_recipients_parts.append(part.decode(encoding or "utf-8"))
                     else:
                         decoded_recipients_parts.append(part)
                 recipients = "".join(decoded_recipients_parts)
             else:
-                recipients = ""  # empty string if no recipients ""
+                recipients = ""  # Set recipients to an empty string if 'To' header is missing
+
 
             date = email_message["Date"]
             message_id = email_message["Message-ID"]
