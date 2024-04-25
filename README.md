@@ -14,10 +14,10 @@ Briefbox is a tool for archiving emails from multiple IMAP and POP3 accounts. It
 ![grafik](https://github.com/bandundu/email-archiver/assets/41874924/856f4f56-6016-476b-857f-f63fe37706aa)
 
 
-## Prerequisites
+<!-- ## Prerequisites
 
 - Docker
-- Docker Compose
+- Docker Compose -->
 
 ## Setup and Usage
 
