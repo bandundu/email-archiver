@@ -33,6 +33,7 @@ import FolderIcon from "@mui/icons-material/Folder";
 import axios from "axios";
 import EmailAddress from "./EmailAddress";
 import { useNavigate } from "react-router-dom";
+import AttachmentIcon from "@mui/icons-material/Attachment";
 
 const ArchivePage = () => {
   const [emails, setEmails] = useState([]);
@@ -69,7 +70,11 @@ const ArchivePage = () => {
           sort_order: sortOrder,
         },
       });
-      setEmails(response.data.emails);
+      const emailsWithAttachments = response.data.emails.map((email) => ({
+        ...email,
+        hasAttachments: email.attachments && email.attachments.length > 0,
+      }));
+      setEmails(emailsWithAttachments);
       setTotalEmails(response.data.total_emails);
     } catch (error) {
       console.error("Error fetching emails:", error);
@@ -229,6 +234,7 @@ const ArchivePage = () => {
                     <Typography variant="body2" sx={{ color: "#bdbdbd" }}>
                       Date: {email.date}
                     </Typography>
+                    {email.hasAttachments && (<AttachmentIcon sx={{ color: "white", marginLeft: "4px" }} />)}
                   </CardContent>
                   <CardActions>
                     <IconButton onClick={() => handleViewDetails(email.id)}>

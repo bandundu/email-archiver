@@ -198,11 +198,15 @@ def get_emails():
     cursor.execute(query)
     emails = cursor.fetchall()
 
-    conn.close()
+    email_data = []
+    for email in emails:
+        email_id = email[0]
+        # Check if the email has attachments
+        cursor.execute("SELECT COUNT(*) FROM attachments WHERE email_id = ?", (email_id,))
+        attachment_count = cursor.fetchone()[0]
 
-    email_data = [
-        {
-            "id": email[0],
+        email_data.append({
+            "id": email_id,
             "account_id": email[1],
             "subject": email[2],
             "sender": email[3],
@@ -210,9 +214,10 @@ def get_emails():
             "date": email[5],
             "body": email[6],
             "unique_id": email[7],
-        }
-        for email in emails
-    ]
+            "has_attachments": attachment_count > 0
+        })
+
+    conn.close()
 
     response = make_response(
         jsonify({"emails": email_data, "total_emails": total_emails})
