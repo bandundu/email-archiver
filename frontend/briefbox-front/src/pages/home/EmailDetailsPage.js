@@ -79,7 +79,7 @@ const EmailDetailsPage = () => {
         setAttachments([]); // Clear attachments for cached email
       } else {
         const response = await axios.get(
-          `http://backend:5000/email_details/${emailId}`
+          `http://localhost:5050/email_details/${emailId}`
         );
         setEmail(response.data.email);
         setAttachments(response.data.attachments);
@@ -90,7 +90,7 @@ const EmailDetailsPage = () => {
       }
 
       const totalEmailsResponse = await axios.get(
-        "http://backend:5000/emails",
+        "http://localhost:5050/emails",
         {
           params: {
             page: 1,
@@ -107,7 +107,7 @@ const EmailDetailsPage = () => {
 
       if (prevEmailId >= 1 && !emailCache[prevEmailId]) {
         const prevEmailResponse = await axios.get(
-          `http://backend:5000/email_details/${prevEmailId}`
+          `http://localhost:5050/email_details/${prevEmailId}`
         );
         setEmailCache((prevCache) => ({
           ...prevCache,
@@ -117,7 +117,7 @@ const EmailDetailsPage = () => {
 
       if (nextEmailId <= totalEmails && !emailCache[nextEmailId]) {
         const nextEmailResponse = await axios.get(
-          `http://backend:5000/email_details/${nextEmailId}`
+          `http://localhost:5050/email_details/${nextEmailId}`
         );
         setEmailCache((prevCache) => ({
           ...prevCache,
@@ -236,7 +236,7 @@ const EmailDetailsPage = () => {
                 initial={false}
                 custom={
                   currentEmailIndex >
-                  (emailCache[emailId] ? emailCache[emailId].id : email.id)
+                    (emailCache[emailId] ? emailCache[emailId].id : email.id)
                     ? "next"
                     : "prev"
                 }
@@ -252,7 +252,7 @@ const EmailDetailsPage = () => {
                     transition={emailTransition}
                     custom={
                       currentEmailIndex >
-                      (emailCache[emailId] ? emailCache[emailId].id : email.id)
+                        (emailCache[emailId] ? emailCache[emailId].id : email.id)
                         ? "next"
                         : "prev"
                     }
@@ -295,7 +295,7 @@ const EmailDetailsPage = () => {
                           {attachments.map((attachment) => (
                             <li key={attachment.id}>
                               <a
-                                href={`http://backend:5000/download_attachment/${attachment.id}`}
+                                href={`http://localhost:5050/download_attachment/${attachment.id}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 style={{ color: "white" }}
@@ -374,7 +374,7 @@ const EmailDetailsPage = () => {
               initial={false}
               custom={
                 currentEmailIndex >
-                (emailCache[emailId] ? emailCache[emailId].id : email.id)
+                  (emailCache[emailId] ? emailCache[emailId].id : email.id)
                   ? "next"
                   : "prev"
               }
@@ -389,7 +389,7 @@ const EmailDetailsPage = () => {
                   transition={emailTransition}
                   custom={
                     currentEmailIndex >
-                    (emailCache[emailId] ? emailCache[emailId].id : email.id)
+                      (emailCache[emailId] ? emailCache[emailId].id : email.id)
                       ? "next"
                       : "prev"
                   }
@@ -432,7 +432,7 @@ const EmailDetailsPage = () => {
                         {attachments.map((attachment) => (
                           <li key={attachment.id}>
                             <a
-                              href={`http://backend:5000/download_attachment/${attachment.id}`}
+                              href={`http://localhost:5050/download_attachment/${attachment.id}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               style={{ color: "white" }}

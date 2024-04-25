@@ -58,14 +58,14 @@ function EmailConfirmationPage() {
   const confirmEmail = async (data) => {
     try {
       const response = await axios.post(
-        "http://backend:5000/confirm-email",
+        "http://localhost:5050/confirm-email",
         data
       );
       if (response.data.success) {
-        toast.success("Email confirmed successfully!", {style: toastStyle});
+        toast.success("Email confirmed successfully!", { style: toastStyle });
         navigate('/account-setup');
       } else {
-        toast.error(response.data.message || 'Failed to confirm email. Please try again.', {style: toastStyle});
+        toast.error(response.data.message || 'Failed to confirm email. Please try again.', { style: toastStyle });
       }
     } catch (error) {
       console.error('Error:', error);
@@ -74,7 +74,7 @@ function EmailConfirmationPage() {
       });
     }
   };
-  
+
 
   const handleChange = (event, index) => {
     const value = event.target.value;
@@ -120,7 +120,7 @@ function EmailConfirmationPage() {
       padding: 0,
       flexDirection: 'row',
     }}>
-      <ToastContainer position="bottom-center" autoClose={5000} hideProgressBar newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="dark" />
+      <ToastContainer position="bottom-center" autoClose={5050} hideProgressBar newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="dark" />
       <Grid container spacing={2} style={{ maxWidth: '400px', margin: 'auto', position: 'relative', zIndex: 2 }}>
         <Grid item xs={12}>
           <Paper elevation={3} style={{ padding: '20px', backgroundColor: 'black', color: 'white' }}>
@@ -135,32 +135,32 @@ function EmailConfirmationPage() {
               It may take a few minutes to arrive.
             </Typography>
             {(!error && !responseMessage) && (
-            <form ref={formRef} onSubmit={handleConfirmation}>
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              {confirmationCode.map((_, index) => (
-                <TextField
-                  key={index}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength="1"
-                  value={confirmationCode[index]}
-                  onChange={(e) => handleChange(e, index)}
-                  onKeyDown={(e) => handleBackspace(e, index)}
-                  ref={(el) => {
-                    // Find the inner input element and set the ref
-                    inputRefs.current[index] = el ? el.querySelector('input') : null;
-                  }}
-                  style={{ width: '50px', margin: '5px' }}
-                  inputProps={{ style: { textAlign: 'center', fontSize: '20px' }, maxLength: 1 }}
-                  InputLabelProps={{ style: { display: 'none' } }}
-                  sx={textFieldStyle}
-                />
-              ))}
-            </div>
-            <Button variant="contained" color="primary" type="submit" style={{ marginTop: '20px' }}>
-              Confirm Email
-            </Button>
-          </form>
+              <form ref={formRef} onSubmit={handleConfirmation}>
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                  {confirmationCode.map((_, index) => (
+                    <TextField
+                      key={index}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength="1"
+                      value={confirmationCode[index]}
+                      onChange={(e) => handleChange(e, index)}
+                      onKeyDown={(e) => handleBackspace(e, index)}
+                      ref={(el) => {
+                        // Find the inner input element and set the ref
+                        inputRefs.current[index] = el ? el.querySelector('input') : null;
+                      }}
+                      style={{ width: '50px', margin: '5px' }}
+                      inputProps={{ style: { textAlign: 'center', fontSize: '20px' }, maxLength: 1 }}
+                      InputLabelProps={{ style: { display: 'none' } }}
+                      sx={textFieldStyle}
+                    />
+                  ))}
+                </div>
+                <Button variant="contained" color="primary" type="submit" style={{ marginTop: '20px' }}>
+                  Confirm Email
+                </Button>
+              </form>
             )}
           </Paper>
         </Grid>

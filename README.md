@@ -31,7 +31,7 @@ services:
     # latest-arm for ARM devices like Raspberry Pi
     image: bandundu/briefbox-backend:latest
     ports:
-      - "5000:5000"
+      - "5050:5050"
     volumes:
       - ./:/app/data
     environment:

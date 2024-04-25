@@ -1,5 +1,5 @@
 import 'react-toastify/dist/ReactToastify.css';
-import React, { useState, useEffect, useCallback} from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Grid, Paper, Typography, TextField, Button, Checkbox, FormControlLabel } from '@mui/material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import axios from 'axios'; // Import Axios
@@ -28,7 +28,7 @@ function RegisterPage() {
   const [agreeToPolicy, setAgreeToPolicy] = useState(false);
   const [attemptedSubmitWithoutAgreement, setAttemptedSubmitWithoutAgreement] = useState(false);
 
-  
+
   const textFieldStyle = {
     '& .MuiOutlinedInput-root': {
       '& fieldset': {
@@ -53,8 +53,8 @@ function RegisterPage() {
     justifyContent: 'center',
     textAlign: 'center',
   };
-  
-  
+
+
 
   const checkboxStyle = {
     '&.MuiCheckbox-root': {
@@ -64,7 +64,7 @@ function RegisterPage() {
       color: theme.palette.primary.main, // Keep the existing color when checked
     }
   };
-  
+
   // Handle change for the checkbox
   const handleAgreeToPolicyChange = (event) => {
     setAgreeToPolicy(event.target.checked);
@@ -73,7 +73,7 @@ function RegisterPage() {
   // Creating a debounce function using useCallback
   const debounce = (func, delay) => {
     let timer;
-    return function(...args) {
+    return function (...args) {
       clearTimeout(timer);
       timer = setTimeout(() => func.apply(this, args), delay);
     };
@@ -144,40 +144,40 @@ function RegisterPage() {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-  
+
     if (!agreeToPolicy) {
       setAttemptedSubmitWithoutAgreement(true);
       // Display toast for policy agreement requirement
       toast.error("Please agree to the policy to register.");
       return; // Stop the form submission
     }
-  
+
     // Show loading toast with custom style
     const toastId = toast.loading("Registering...", {
       style: toastStyle
     });
-  
+
     // Create an object with the user's data
     const userData = {
       email
     };
-  
+
     try {
       const response = await axios.post(
-        "http://backend:5000/register",
+        "http://localhost:5050/register",
         userData,
-        { timeout: 5000 }
+        { timeout: 5050 }
       );
-    
+
       if (response.data.success) {
         // Update toast to success
-        toast.update(toastId, { render: "Registration successful!", type: "success", isLoading: false, autoClose: 3000 , style: toastStyle});
+        toast.update(toastId, { render: "Registration successful!", type: "success", isLoading: false, autoClose: 3000, style: toastStyle });
         setTimeout(() => {
           navigate('/confirm-email');
         }, 3500);
       } else {
         // Update toast to error
-        toast.update(toastId, { render: response.data.message, type: "error", isLoading: false, autoClose: 3000, style: toastStyle});
+        toast.update(toastId, { render: response.data.message, type: "error", isLoading: false, autoClose: 3000, style: toastStyle });
       }
     } catch (error) {
       console.error('Error:', error);
@@ -187,18 +187,18 @@ function RegisterPage() {
         toast.update(toastId, { render: error.response.data.message || "An error occurred while registering.", type: "error", isLoading: false, autoClose: 3000, style: toastStyle });
       } else if (error.code === 'ECONNABORTED') {
         // Timeout error
-        toast.update(toastId, { 
+        toast.update(toastId, {
           render: () => (
             <div>
               Sorry, we're having trouble connecting to our services 😔<br />
               <br />
               Please try again in a few moments.
             </div>
-          ), 
-          type: "error", 
-          isLoading: false, 
-          autoClose: 15000, 
-          style: toastStyle 
+          ),
+          type: "error",
+          isLoading: false,
+          autoClose: 15050,
+          style: toastStyle
         });
       } else {
         // Other errors
@@ -206,7 +206,7 @@ function RegisterPage() {
       }
     }
   };
-  
+
 
   // Style for highlighting the checkbox
   const highlightStyle = {
@@ -215,11 +215,11 @@ function RegisterPage() {
   };
 
   return (
-    <Container style={{ 
-      display: 'flex', 
-      alignItems: 'start', 
-      justifyContent: 'center', 
-      minHeight: '100vh', 
+    <Container style={{
+      display: 'flex',
+      alignItems: 'start',
+      justifyContent: 'center',
+      minHeight: '100vh',
       backgroundColor: 'black',
       width: '100vw',
       maxWidth: '100%',
@@ -227,102 +227,102 @@ function RegisterPage() {
       padding: 0,
       flexDirection: 'row',
     }}>
-      <ToastContainer position="bottom-center" autoClose={5000} hideProgressBar newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="dark" />
+      <ToastContainer position="bottom-center" autoClose={5050} hideProgressBar newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="dark" />
       <Grid container spacing={2} style={{ maxWidth: '400px', margin: 'auto', position: 'relative', zIndex: 2 }}>
         <Grid item xs={12}>
           <Paper elevation={3} style={{ padding: '20px', backgroundColor: 'black', color: 'white' }}>
-          <img src={logo} alt="Logo" style={{ display: 'block', marginBottom: '20px', marginLeft: 'auto', marginRight: 'auto', width: '15%' }} />
+            <img src={logo} alt="Logo" style={{ display: 'block', marginBottom: '20px', marginLeft: 'auto', marginRight: 'auto', width: '15%' }} />
             <Typography variant="h5" align="left">
               Create a new account
             </Typography>
             <Typography variant="caption" align="left" color='grey'>
-              Already have an account? <RouterLink 
-                  to="/login" 
-                  style={{ 
-                      color: 'white', 
-                      textDecoration: 'none', 
-                      borderBottom: '1px solid transparent', // Add this line
-                      transition: 'border-bottom 0.2s ease' // Add transition for smooth effect
-                  }}
-                  onMouseOver={(e) => e.currentTarget.style.textDecoration = 'underline'} // Add hover effect
-                  onMouseOut={(e) => e.currentTarget.style.textDecoration = 'none'} // Remove hover effect
+              Already have an account? <RouterLink
+                to="/login"
+                style={{
+                  color: 'white',
+                  textDecoration: 'none',
+                  borderBottom: '1px solid transparent', // Add this line
+                  transition: 'border-bottom 0.2s ease' // Add transition for smooth effect
+                }}
+                onMouseOver={(e) => e.currentTarget.style.textDecoration = 'underline'} // Add hover effect
+                onMouseOut={(e) => e.currentTarget.style.textDecoration = 'none'} // Remove hover effect
               >
-                  Sign in now
+                Sign in now
               </RouterLink>
             </Typography>
             <form onSubmit={handleRegister}>
-            <TextField
-              label="Email"
-              fullWidth
-              margin="normal"
-              value={email}
-              placeholder="john.doe@example.com"
-              onChange={handleEmailChange}
-              error={isEmailValid === false}
-              helperText={isEmailValid === false ? "Invalid email address" : ""}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    {isEmailValid ? (
-                      <IconButton>
-                        <CheckCircleIcon style={{ color: 'green' }} />
-                      </IconButton>
-                    ) : isEmailValid === false ? (
-                      <IconButton>
-                        <ErrorOutlineIcon style={{ color: 'red' }} />
-                      </IconButton>
-                    ) : null}
-                  </InputAdornment>
-                ),
-                style: { color: 'white' } // Set text color to white
-              }}
-              InputLabelProps={{ style: { color: 'white' } }} // Set label color to white
-              sx={textFieldStyle}
-            />
-                      <Grid item xs={12}>
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={agreeToPolicy}
-                onChange={handleAgreeToPolicyChange}
-                name="agreeToPolicy"
-                color="primary"
-                sx={checkboxStyle}
+              <TextField
+                label="Email"
+                fullWidth
+                margin="normal"
+                value={email}
+                placeholder="john.doe@example.com"
+                onChange={handleEmailChange}
+                error={isEmailValid === false}
+                helperText={isEmailValid === false ? "Invalid email address" : ""}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      {isEmailValid ? (
+                        <IconButton>
+                          <CheckCircleIcon style={{ color: 'green' }} />
+                        </IconButton>
+                      ) : isEmailValid === false ? (
+                        <IconButton>
+                          <ErrorOutlineIcon style={{ color: 'red' }} />
+                        </IconButton>
+                      ) : null}
+                    </InputAdornment>
+                  ),
+                  style: { color: 'white' } // Set text color to white
+                }}
+                InputLabelProps={{ style: { color: 'white' } }} // Set label color to white
+                sx={textFieldStyle}
               />
-            }
-            label={
-              <Typography variant="caption" color="grey">
-                I agree to the processing of my personal data according to our <RouterLink 
-                  to="//privacy-policy" 
-                  style={{ 
-                      color: 'white', 
-                      textDecoration: 'none', 
-                      borderBottom: '1px solid transparent', // Add this line
-                      transition: 'border-bottom 0.2s ease' // Add transition for smooth effect
-                  }}
-                  onMouseOver={(e) => e.currentTarget.style.textDecoration = 'underline'} // Add hover effect
-                  onMouseOut={(e) => e.currentTarget.style.textDecoration = 'none'} // Remove hover effect
+              <Grid item xs={12}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={agreeToPolicy}
+                      onChange={handleAgreeToPolicyChange}
+                      name="agreeToPolicy"
+                      color="primary"
+                      sx={checkboxStyle}
+                    />
+                  }
+                  label={
+                    <Typography variant="caption" color="grey">
+                      I agree to the processing of my personal data according to our <RouterLink
+                        to="//privacy-policy"
+                        style={{
+                          color: 'white',
+                          textDecoration: 'none',
+                          borderBottom: '1px solid transparent', // Add this line
+                          transition: 'border-bottom 0.2s ease' // Add transition for smooth effect
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.textDecoration = 'underline'} // Add hover effect
+                        onMouseOut={(e) => e.currentTarget.style.textDecoration = 'none'} // Remove hover effect
+                      >
+                        Privacy Policy
+                      </RouterLink>
+                    </Typography>
+                  }
+                  sx={attemptedSubmitWithoutAgreement ? highlightStyle : {}}
+                />
+              </Grid>
+              <Button
+                variant="contained"
+                color="primary"
+                fullWidth
+                type="submit"
+                style={{
+                  marginTop: '20px',
+                  backgroundColor: (!agreeToPolicy || (isEmailValid !== null && isEmailValid === false) || isEmailValid == null) ? 'grey' : '' // Grey if not agreed or email invalid
+                }}
+                disabled={!agreeToPolicy || (isEmailValid !== null && isEmailValid === false) || isEmailValid == null} // Disable if not agreed or email invalid
               >
-                 Privacy Policy
-              </RouterLink>
-              </Typography>
-            }
-            sx={attemptedSubmitWithoutAgreement ? highlightStyle : {}}
-          />
-        </Grid>
-        <Button 
-          variant="contained" 
-          color="primary" 
-          fullWidth 
-          type="submit" 
-          style={{ 
-            marginTop: '20px', 
-            backgroundColor: (!agreeToPolicy || (isEmailValid !== null && isEmailValid === false) || isEmailValid == null) ? 'grey' : '' // Grey if not agreed or email invalid
-          }}
-          disabled={!agreeToPolicy || (isEmailValid !== null && isEmailValid === false) || isEmailValid == null} // Disable if not agreed or email invalid
-        >
-          Register
-        </Button>
+                Register
+              </Button>
 
 
             </form>

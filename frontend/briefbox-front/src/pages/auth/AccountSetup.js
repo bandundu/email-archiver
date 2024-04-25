@@ -52,7 +52,7 @@ const AccountSetup = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-    
+
         const formData = new FormData();
         formData.append('username', username);
         formData.append('name', name);
@@ -60,19 +60,19 @@ const AccountSetup = () => {
         if (profilePicture) {
             formData.append('profilePicture', profilePicture);
         }
-    
+
         try {
             const response = await axios.post(
-              "http://backend:5000/account-setup",
-              formData,
-              {
-                headers: {
-                  "Content-Type": "multipart/form-data",
-                  Authorization: `Bearer ${localStorage.getItem(
-                    "access_token"
-                  )}`, // Add JWT token here
-                },
-              }
+                "http://localhost:5050/account-setup",
+                formData,
+                {
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                        Authorization: `Bearer ${localStorage.getItem(
+                            "access_token"
+                        )}`, // Add JWT token here
+                    },
+                }
             );
             setSuccess(true);
             setTimeout(() => {
@@ -82,8 +82,8 @@ const AccountSetup = () => {
             setError('Failed to complete account setup. Please try again.');
         }
     };
-    
-    
+
+
 
     if (success) {
         return <div>Account setup successful! Redirecting...</div>;
@@ -96,7 +96,7 @@ const AccountSetup = () => {
                     <Paper elevation={3} style={styles.paperStyle}>
                         <img src={logo} alt="Logo" style={styles.logoStyle} />
                         <Typography variant="h5" align="left">Account Setup</Typography>
-                        
+
                         <div style={styles.profilePicSection}>
                             <Avatar src={profilePicPreview} style={styles.avatarStyle} />
                             <Button variant="contained" component="label" style={styles.uploadButtonStyle}>
@@ -161,10 +161,10 @@ const AccountSetup = () => {
 
 const styles = {
     containerStyle: {
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        minHeight: '100vh', 
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
         backgroundColor: 'black',
         width: '100vw',
         maxWidth: '100%',
@@ -173,22 +173,22 @@ const styles = {
         flexDirection: 'column',
     },
     gridContainerStyle: {
-        maxWidth: '400px', 
-        margin: 'auto', 
-        position: 'relative', 
-        zIndex: 2 
+        maxWidth: '400px',
+        margin: 'auto',
+        position: 'relative',
+        zIndex: 2
     },
     paperStyle: {
-        padding: '20px', 
-        backgroundColor: 'black', 
-        color: 'white' 
+        padding: '20px',
+        backgroundColor: 'black',
+        color: 'white'
     },
     logoStyle: {
-        display: 'block', 
-        marginBottom: '20px', 
-        marginLeft: 'auto', 
-        marginRight: 'auto', 
-        width: '15%' 
+        display: 'block',
+        marginBottom: '20px',
+        marginLeft: 'auto',
+        marginRight: 'auto',
+        width: '15%'
     },
     avatarStyle: {
         width: 70,

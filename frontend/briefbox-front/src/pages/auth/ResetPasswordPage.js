@@ -27,8 +27,8 @@ function ResetPasswordPage() {
         try {
             // Send a POST request to your backend
             const response = await axios.post(
-              "http://backend:5000/reset-password",
-              { token, password }
+                "http://localhost:5050/reset-password",
+                { token, password }
             );
 
             // Update the response message state with the result from the backend
@@ -54,8 +54,8 @@ function ResetPasswordPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter new password"
-                    InputProps={{ style: {/*...styles*/} }}
-                    InputLabelProps={{ style: {/*...styles*/} }}
+                    InputProps={{ style: {/*...styles*/ } }}
+                    InputLabelProps={{ style: {/*...styles*/ } }}
                 />
                 <TextField
                     label="Confirm New Password"
@@ -65,8 +65,8 @@ function ResetPasswordPage() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Confirm new password"
-                    InputProps={{ style: {/*...styles*/} }}
-                    InputLabelProps={{ style: {/*...styles*/} }}
+                    InputProps={{ style: {/*...styles*/ } }}
+                    InputLabelProps={{ style: {/*...styles*/ } }}
                 />
                 <Button variant="contained" color="primary" fullWidth type="submit" style={{ marginTop: '20px' }}>
                     Reset Password

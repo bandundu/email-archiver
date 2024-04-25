@@ -388,7 +388,6 @@ def download_attachment(attachment_id):
         response.headers.add("Access-Control-Allow-Origin", "*")
         return response
 
-
 @app.route("/export_email/<int:email_id>")
 def export_email(email_id):
     conn = sqlite3.connect("data/email_archive.db")
@@ -447,6 +446,10 @@ def run_archiver_thread():
 
 
 if __name__ == "__main__":
+    # Check if the "data" folder exists, and create it if it doesn't
+    if not os.path.exists("data"):
+        os.makedirs("data")
+
     # Initialize the database
     try:
         initialize_database()
@@ -461,4 +464,4 @@ if __name__ == "__main__":
     archiver_thread.start()
 
     # Run the Flask app
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5050, debug=True)

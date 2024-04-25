@@ -61,7 +61,7 @@ const ArchivePage = () => {
 
   const fetchEmails = async () => {
     try {
-      const response = await axios.get("http://backend:5000/emails", {
+      const response = await axios.get("http://localhost:5050/emails", {
         params: {
           page: page + 1,
           per_page: rowsPerPage,
@@ -171,7 +171,7 @@ const ArchivePage = () => {
             onClick={async () => {
               try {
                 await axios.delete(
-                  `http://backend:5000/delete_email/${emailToDelete}`
+                  `http://localhost:5050/delete_email/${emailToDelete}`
                 );
                 console.log("Email deleted successfully");
                 setDeleteConfirmationOpen(false);
@@ -267,13 +267,13 @@ const ArchivePage = () => {
               sx={{
                 color: "white",
                 "& .MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows":
-                  {
-                    color: "white",
-                  },
+                {
+                  color: "white",
+                },
                 "& .MuiTablePagination-select, .MuiTablePagination-selectIcon":
-                  {
-                    color: "white",
-                  },
+                {
+                  color: "white",
+                },
                 "& .MuiTablePagination-actions .MuiIconButton-root": {
                   color: "white",
                 },
@@ -395,13 +395,13 @@ const ArchivePage = () => {
               sx={{
                 color: "white",
                 "& .MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows":
-                  {
-                    color: "white",
-                  },
+                {
+                  color: "white",
+                },
                 "& .MuiTablePagination-select, .MuiTablePagination-selectIcon":
-                  {
-                    color: "white",
-                  },
+                {
+                  color: "white",
+                },
                 "& .MuiTablePagination-actions .MuiIconButton-root": {
                   color: "white",
                 },

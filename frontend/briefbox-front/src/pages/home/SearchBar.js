@@ -114,10 +114,10 @@ function SearchBar() {
     const fetchSearchResults = async () => {
       if (searchTerm.trim() !== "") {
         try {
-          const response = await axios.post("http://backend:5000/search_emails", {
+          const response = await axios.post("http://localhost:5050/search_emails", {
             query: searchTerm,
           });
-  
+
           // Validate the response data
           if (response.data && Array.isArray(response.data.emails)) {
             setSearchResults(response.data.emails);
@@ -137,11 +137,11 @@ function SearchBar() {
         setShowResults(false);
       }
     };
-  
+
     const debounceTimer = setTimeout(() => {
       fetchSearchResults();
     }, 300);
-  
+
     return () => {
       clearTimeout(debounceTimer);
     };

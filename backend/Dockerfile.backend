@@ -12,7 +12,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Expose the backend port
-EXPOSE 5000
+EXPOSE 5050
 
 # Start the backend
 CMD ["python", "app.py"]

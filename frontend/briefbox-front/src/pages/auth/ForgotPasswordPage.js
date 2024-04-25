@@ -15,8 +15,8 @@ function ForgotPasswordPage() {
         try {
             // Send a POST request to your backend
             const response = await axios.post(
-              "http://backend:5000/forgot-password",
-              { email }
+                "http://localhost:5050/forgot-password",
+                { email }
             );
 
             // Update the response message state with the result from the backend
@@ -31,11 +31,11 @@ function ForgotPasswordPage() {
     };
 
     return (
-        <Container style={{ 
-            display: 'flex', 
-            alignItems: 'start', 
-            justifyContent: 'center', 
-            minHeight: '100vh', 
+        <Container style={{
+            display: 'flex',
+            alignItems: 'start',
+            justifyContent: 'center',
+            minHeight: '100vh',
             backgroundColor: 'black',
             width: '100vw',
             maxWidth: '100%',
@@ -69,19 +69,19 @@ function ForgotPasswordPage() {
                             </Button>
                         </form>
                         <Typography variant="caption" align="right" color='grey'>
-                        Remembered? <RouterLink 
-                            to="/login" 
-                            style={{ 
-                                color: 'white', 
-                                textDecoration: 'none', 
-                                borderBottom: '1px solid transparent', // Add this line
-                                transition: 'border-bottom 0.2s ease' // Add transition for smooth effect
-                            }}
-                            onMouseOver={(e) => e.currentTarget.style.textDecoration = 'underline'} // Add hover effect
-                            onMouseOut={(e) => e.currentTarget.style.textDecoration = 'none'} // Remove hover effect
-                        >
-                            Sign in now
-                        </RouterLink>
+                            Remembered? <RouterLink
+                                to="/login"
+                                style={{
+                                    color: 'white',
+                                    textDecoration: 'none',
+                                    borderBottom: '1px solid transparent', // Add this line
+                                    transition: 'border-bottom 0.2s ease' // Add transition for smooth effect
+                                }}
+                                onMouseOver={(e) => e.currentTarget.style.textDecoration = 'underline'} // Add hover effect
+                                onMouseOut={(e) => e.currentTarget.style.textDecoration = 'none'} // Remove hover effect
+                            >
+                                Sign in now
+                            </RouterLink>
                         </Typography>
                     </Paper>
                 </Grid>
