@@ -1,6 +1,7 @@
-Flask
+fastapi
+uvicorn
+python-multipart
 cryptography
 python-dateutil
 python-dotenv
 PyJWT
-flask-cors

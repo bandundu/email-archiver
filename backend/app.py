@@ -1,21 +1,25 @@
-from flask import Flask, request, make_response, jsonify
-
+from fastapi import FastAPI, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 import sqlite3
 from dateutil import parser
 import threading
 from dotenv import load_dotenv
-# from flask_cors import CORS
 import os
 from cryptography.fernet import Fernet, InvalidToken
 import re
+import email_archiver as email_archiver
+from email_archiver import initialize_database
 
-app = Flask(__name__)
-# cors = CORS(
-#     app,
-#     origins="*",
-#     supports_credentials=True,
-# )
+app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Try to load environment variables from .env file
 load_dotenv()
@@ -60,30 +64,30 @@ else:
     with open(".env", "w") as f:
         f.write(updated_contents)
 
-import email_archiver as email_archiver
-from email_archiver import initialize_database
+class AccountData(BaseModel):
+    email: str
+    password: str
+    protocol: str
+    server: str
+    port: int
 
+class SearchQuery(BaseModel):
+    query: str
 
-@app.template_filter("format_date")
 def format_date(date_str):
-    # Use dateutil.parser to handle various date formats with or without timezone information
     date_obj = parser.parse(date_str)
-    # Format the date as desired (e.g., without timezone information)
     return date_obj.strftime("%a, %d %b %Y %H:%M:%S")
 
-
-@app.route("/fernet_key")
+@app.get("/fernet_key")
 def get_fernet_key():
     fernet_key = os.getenv("SECRET_KEY")
-    return jsonify({"fernet_key": fernet_key})
+    return {"fernet_key": fernet_key}
 
-
-@app.route("/stats")
+@app.get("/stats")
 def get_stats():
     conn = sqlite3.connect("data/email_archive.db")
     cursor = conn.cursor()
 
-    # Fetch summary statistics
     cursor.execute("SELECT COUNT(*) FROM emails")
     total_emails = cursor.fetchone()[0]
 
@@ -100,18 +104,13 @@ def get_stats():
         "totalAccounts": total_accounts,
         "totalAttachments": total_attachments,
     }
-    response = make_response(jsonify(stats))
-    response.headers.add("Access-Control-Allow-Origin", "*")
-    return response
-    # return jsonify(stats)
+    return stats
 
-
-@app.route("/latest-emails")
+@app.get("/latest-emails")
 def latest_emails():
     conn = sqlite3.connect("data/email_archive.db")
     cursor = conn.cursor()
 
-    # Fetch the latest archived emails
     cursor.execute(
         "SELECT subject, sender, date FROM emails ORDER BY date DESC LIMIT 5"
     )
@@ -119,81 +118,44 @@ def latest_emails():
 
     conn.close()
 
-    # Format the latest emails as a list of dictionaries
     emails_data = [
         {"subject": email[0], "sender": email[1], "date": format_date(email[2])}
         for email in latest_emails
     ]
 
-    return jsonify(emails_data)
+    return emails_data
 
+@app.post("/create_account")
+def create_account(account_data: AccountData):
+    email = account_data.email
+    password = account_data.password
+    protocol = account_data.protocol
+    server = account_data.server
+    port = account_data.port
 
-@app.route("/create_account", methods=["POST", "OPTIONS"])
-def create_account():
-    if request.method == "OPTIONS":
-        # Preflight request. Reply with the CORS headers.
-        response = make_response()
-        response.headers.add("Access-Control-Allow-Headers", "*")
-        response.headers.add("Access-Control-Allow-Methods", "*")
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        return response
+    if not all([email, password, protocol.lower(), server, port]):
+        return {"error": "Missing required fields"}
 
-    if request.method == "POST":
-        # Parse data as JSON
-        data = request.get_json()
+    conn = sqlite3.connect("data/email_archive.db")
+    try:
+        email_archiver.create_account(conn, email, password, protocol, server, port)
+        conn.close()
+        return {"message": "Account created successfully"}
+    except sqlite3.IntegrityError:
+        conn.close()
+        error_message = f"An account with email '{email}' already exists. Please use a different email."
+        return {"error": error_message}
 
-        email = data.get("email")
-        password = data.get("password")
-        protocol = data.get("protocol")
-        server = data.get("server")
-        port = data.get("port")
-
-        # Validate the extracted data
-        if not all([email, password, protocol.lower(), server, port]):
-            response = jsonify({"error": "Missing required fields"})
-            response.headers.add("Access-Control-Allow-Headers", "*")
-            response.headers.add("Access-Control-Allow-Methods", "*")
-            response.headers.add("Access-Control-Allow-Origin", "*")
-            return response, 400
-
-        conn = sqlite3.connect("data/email_archive.db")
-        try:
-            # Assume email_archiver.create_account function exists and handles the DB operations
-            email_archiver.create_account(conn, email, password, protocol, server, port)
-            conn.close()
-            response = jsonify({"message": "Account created successfully"})
-            response.headers.add("Access-Control-Allow-Headers", "*")
-            response.headers.add("Access-Control-Allow-Methods", "*")
-            response.headers.add("Access-Control-Allow-Origin", "*")
-            return response, 201
-        except sqlite3.IntegrityError:
-            conn.close()
-            error_message = f"An account with email '{email}' already exists. Please use a different email."
-            response = jsonify({"error": error_message})
-            response.headers.add("Access-Control-Allow-Headers", "*")
-            response.headers.add("Access-Control-Allow-Methods", "*")
-            response.headers.add("Access-Control-Allow-Origin", "*")
-            return response, 400
-
-
-@app.route("/emails")
-def get_emails():
-    page = request.args.get("page", default=1, type=int)
-    per_page = request.args.get("per_page", default=10, type=int)
-    sort_by = request.args.get("sort_by", default="date")
-    sort_order = request.args.get("sort_order", default="desc")
-
+@app.get("/emails")
+def get_emails(page: int = 1, per_page: int = 10, sort_by: str = "date", sort_order: str = "desc"):
     conn = sqlite3.connect("data/email_archive.db")
     cursor = conn.cursor()
 
-    # Get the total count of emails
     cursor.execute("SELECT COUNT(*) FROM emails")
     total_emails = cursor.fetchone()[0]
 
-    # Calculate the offset based on the page and per_page values
     offset = (page - 1) * per_page
 
-    # Fetch the emails with pagination
     query = f"SELECT * FROM emails ORDER BY {sort_by} {sort_order} LIMIT {per_page} OFFSET {offset}"
     cursor.execute(query)
     emails = cursor.fetchall()
@@ -201,7 +163,6 @@ def get_emails():
     email_data = []
     for email in emails:
         email_id = email[0]
-        # Check if the email has attachments
         cursor.execute("SELECT COUNT(*) FROM attachments WHERE email_id = ?", (email_id,))
         attachment_count = cursor.fetchone()[0]
 
@@ -219,16 +180,9 @@ def get_emails():
 
     conn.close()
 
-    response = make_response(
-        jsonify({"emails": email_data, "total_emails": total_emails})
-    )
-    response.headers.add("Access-Control-Allow-Origin", "*")
-    response.headers.add("Access-Control-Allow-Headers", "*")
-    response.headers.add("Access-Control-Allow-Methods", "*")
-    return response
+    return {"emails": email_data, "total_emails": total_emails}
 
-
-@app.route("/get_accounts", methods=["GET"])
+@app.get("/get_accounts")
 def get_accounts():
     conn = sqlite3.connect("data/email_archive.db")
     accounts = email_archiver.read_accounts(conn)
@@ -244,23 +198,16 @@ def get_accounts():
         }
         for account in accounts
     ]
-    # create response and set CORS headers
-    response = jsonify(accounts_data)
-    response.headers.add("Access-Control-Allow-Origin", "*")
-    response.headers.add("Access-Control-Allow-Headers", "*")
-    response.headers.add("Access-Control-Allow-Methods", "*")
-    return response
+    return accounts_data
 
-
-@app.route("/update_account/<int:account_id>", methods=["POST"])
-def update_account(account_id):
-    data = request.get_json()
-    email = data.get("email")
-    password = data.get("password")
-    protocol = data.get("protocol")
-    server = data.get("server")
-    port = int(data.get("port"))
-    mailbox = data.get("mailbox")
+@app.post("/update_account/{account_id}")
+def update_account(account_id: int, account_data: AccountData):
+    email = account_data.email
+    password = account_data.password
+    protocol = account_data.protocol
+    server = account_data.server
+    port = account_data.port
+    mailbox = account_data.mailbox
 
     conn = sqlite3.connect("data/email_archive.db")
     email_archiver.update_account(
@@ -268,50 +215,38 @@ def update_account(account_id):
     )
     conn.close()
 
-    return jsonify({"message": "Account updated successfully"}), 200
+    return {"message": "Account updated successfully"}
 
-
-@app.route("/delete_account/<int:account_id>", methods=["DELETE"])
-def delete_account(account_id):
+@app.delete("/delete_account/{account_id}")
+def delete_account(account_id: int):
     conn = sqlite3.connect("data/email_archive.db")
     email_archiver.delete_account(conn, account_id)
     conn.close()
 
-    return jsonify({"message": "Account deleted successfully"}), 200
+    return {"message": "Account deleted successfully"}
 
-
-@app.route("/delete_email/<int:email_id>", methods=["DELETE"])
-def delete_email(email_id):
+@app.delete("/delete_email/{email_id}")
+def delete_email(email_id: int):
     conn = sqlite3.connect("data/email_archive.db")
     cursor = conn.cursor()
 
     try:
-        # Delete the email from the emails table
         cursor.execute("DELETE FROM emails WHERE id = ?", (email_id,))
-
-        # Delete the associated attachments from the attachments table
         cursor.execute("DELETE FROM attachments WHERE email_id = ?", (email_id,))
 
         conn.commit()
         conn.close()
 
-        # create response and set CORS headers
-        response = jsonify({"message": "Email deleted successfully"})
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        return response
+        return {"message": "Email deleted successfully"}
 
     except Exception as e:
         conn.rollback()
         conn.close()
-        # create response and set CORS headers
-        response = jsonify({"error": "An error occurred while deleting the email"})
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        return response
+        return {"error": "An error occurred while deleting the email"}
 
-
-@app.route("/search_emails", methods=["POST"])
-def search_emails():
-    query = request.get_json().get("query")
+@app.post("/search_emails")
+def search_emails(search_query: SearchQuery):
+    query = search_query.query
     conn = sqlite3.connect("data/email_archive.db")
     emails = email_archiver.search_emails(conn, query)
     conn.close()
@@ -330,13 +265,10 @@ def search_emails():
         for email in emails
     ]
 
-    response = jsonify({"emails": email_data})
-    response.headers.add("Access-Control-Allow-Origin", "*")
-    return response
+    return {"emails": email_data}
 
-
-@app.route("/email_details/<int:email_id>")
-def email_details(email_id):
+@app.get("/email_details/{email_id}")
+def email_details(email_id: int):
     conn = sqlite3.connect("data/email_archive.db")
     email, attachments, attachment_filenames = email_archiver.get_email_details(
         conn, email_id
@@ -358,19 +290,12 @@ def email_details(email_id):
             {"id": attachment[0], "filename": attachment[1]}
             for attachment in attachments
         ]
-        # create response and set CORS headers
-        response = jsonify({"email": email_data, "attachments": attachment_data})
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        return response
+        return {"email": email_data, "attachments": attachment_data}
     else:
-        # create response and set CORS headers
-        response = jsonify({"error": "Email not found"})
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        return response
+        return {"error": "Email not found"}
 
-
-@app.route("/download_attachment/<int:attachment_id>")
-def download_attachment(attachment_id):
+@app.get("/download_attachment/{attachment_id}")
+def download_attachment(attachment_id: int):
     conn = sqlite3.connect("data/email_archive.db")
     cursor = conn.cursor()
     cursor.execute(
@@ -381,81 +306,45 @@ def download_attachment(attachment_id):
 
     if attachment:
         filename, content = attachment
-        response = make_response(content)
-        response.headers.set("Content-Type", "application/octet-stream")
-        response.headers.set("Content-Disposition", "attachment", filename=filename)
-        # add CORS headers
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        return response
+        return Response(content=content, media_type="application/octet-stream", headers={"Content-Disposition": f"attachment; filename={filename}"})
     else:
-        # create response and set CORS headers
-        response = jsonify({"error": "Attachment not found"})
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        return response
+        return {"error": "Attachment not found"}
 
-@app.route("/export_email/<int:email_id>")
-def export_email(email_id):
+@app.get("/export_email/{email_id}")
+def export_email(email_id: int):
     conn = sqlite3.connect("data/email_archive.db")
     email_data = email_archiver.export_email(conn, email_id)
     conn.close()
 
     if email_data:
-        response = make_response(email_data)
-        response.headers.set("Content-Type", "message/rfc822")
-        response.headers.set(
-            "Content-Disposition", "attachment", filename=f"email_{email_id}.eml"
-        )
-        # add CORS headers
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        return response
+        return Response(content=email_data, media_type="message/rfc822", headers={"Content-Disposition": f"attachment; filename=email_{email_id}.eml"})
     else:
-        # create response and set CORS headers
-        response = jsonify({"error": "Email not found"})
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        return response
+        return {"error": "Email not found"}
 
-
-@app.route("/export_all_emails")
+@app.get("/export_all_emails")
 def export_all_emails():
     conn = sqlite3.connect("data/email_archive.db")
     zip_data = email_archiver.export_all_emails(conn)
     conn.close()
 
-    response = make_response(zip_data)
-    response.headers.set("Content-Type", "application/zip")
-    response.headers.set("Content-Disposition", "attachment", filename="all_emails.zip")
-    # add CORS headers
-    response.headers.add("Access-Control-Allow-Origin", "*")
-    return response
+    return Response(content=zip_data, media_type="application/zip", headers={"Content-Disposition": "attachment; filename=all_emails.zip"})
 
-
-@app.route("/export_search_results", methods=["POST"])
-def export_search_results():
-    query = request.get_json().get("query")
+@app.post("/export_search_results")
+def export_search_results(search_query: SearchQuery):
+    query = search_query.query
     conn = sqlite3.connect("data/email_archive.db")
     zip_data = email_archiver.export_search_results(conn, query)
     conn.close()
 
-    response = make_response(zip_data)
-    response.headers.set("Content-Type", "application/zip")
-    response.headers.set(
-        "Content-Disposition", "attachment", filename="search_results.zip"
-    )
-    # add CORS headers
-    response.headers.add("Access-Control-Allow-Origin", "*")
-    return response
-
+    return Response(content=zip_data, media_type="application/zip", headers={"Content-Disposition": "attachment; filename=search_results.zip"})
 
 def run_archiver_thread():
     email_archiver.run_archiver()
 
-
 if __name__ == "__main__":
-    # Check if the "data" folder exists, and create it if it doesn't
     if not os.path.exists("data"):
         os.makedirs("data")
 
-    # Initialize the database
     try:
         initialize_database()
     except InvalidToken:
@@ -463,10 +352,10 @@ if __name__ == "__main__":
             "Error: The provided Fernet key is incompatible with the existing database."
         )
         exit(1)
-    # Start the email archiving thread
+
     archiver_thread = threading.Thread(target=run_archiver_thread)
     archiver_thread.daemon = True
     archiver_thread.start()
 
-    # Run the Flask app
-    app.run(host="0.0.0.0", port=5050, debug=True)
+    import uvicorn
+    uvicorn.run(app, host="localhost", port=5050)
