@@ -16,6 +16,8 @@ from email.utils import parsedate_to_datetime
 from dateutil import parser
 from dotenv import load_dotenv
 from jwt import InvalidTokenError
+import hashlib
+
 
 # Load environment variables from .env file
 load_dotenv()
@@ -53,15 +55,15 @@ def initialize_database():
 
         cursor.execute(
             """CREATE TABLE IF NOT EXISTS emails
-                          (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                           account_id INTEGER,
-                           subject TEXT,
-                           sender TEXT,
-                           recipients TEXT,
-                           date DATETIME,
-                           body TEXT,
-                           unique_id TEXT,
-                           FOREIGN KEY (account_id) REFERENCES accounts (id))"""
+                        (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        account_id INTEGER,
+                        subject TEXT,
+                        sender TEXT,
+                        recipients TEXT,
+                        date DATETIME,
+                        body TEXT,
+                        fingerprint TEXT UNIQUE,
+                        FOREIGN KEY (account_id) REFERENCES accounts (id))"""
         )
 
         cursor.execute(
@@ -102,6 +104,8 @@ def parse_date(date_str):
         return None
 
 
+import hashlib
+
 def fetch_and_archive_emails(
     conn, account_id, protocol, server, port, username, encrypted_password, mailbox=None
 ):
@@ -134,10 +138,6 @@ def fetch_and_archive_emails(
 
         cursor = conn.cursor()
 
-        # Retrieve existing unique IDs for the account
-        cursor.execute("SELECT unique_id FROM emails WHERE account_id = ?", (account_id,))
-        existing_uids = set(row[0] for row in cursor.fetchall())
-
         emails_to_insert = []
         attachments_to_insert = []
         skipped_emails = 0
@@ -162,12 +162,14 @@ def fetch_and_archive_emails(
             date = email_message["Date"]
             message_id = email_message["Message-ID"]
 
-            if protocol == "imap":
-                unique_id = str(uid)
-            elif protocol == "pop3":
-                unique_id = f"{message_id}_{date}_{sender}_{subject}"
+            # Generate email fingerprint
+            fingerprint_data = f"{subject}|{sender}|{recipients}|{date}|{message_id}"
+            fingerprint = hashlib.sha256(fingerprint_data.encode()).hexdigest()
 
-            if unique_id in existing_uids:
+            # Check if the email already exists in the database using the fingerprint
+            cursor.execute("SELECT id FROM emails WHERE fingerprint = ?", (fingerprint,))
+            existing_email = cursor.fetchone()
+            if existing_email:
                 logging.debug(f"Skipping email with UID {uid} for account {account_id} as it already exists.")
                 skipped_emails += 1
                 continue
@@ -175,7 +177,7 @@ def fetch_and_archive_emails(
             body = extract_body(email_message)
             parsed_date = parse_date(date)
 
-            emails_to_insert.append((account_id, subject, sender, recipients, parsed_date, body, unique_id))
+            emails_to_insert.append((account_id, subject, sender, recipients, parsed_date, body, fingerprint))
 
             for part in email_message.walk():
                 if part.get_content_maintype() == "multipart" or part.get("Content-Disposition") is None:
@@ -191,7 +193,7 @@ def fetch_and_archive_emails(
 
         if emails_to_insert:
             cursor.executemany(
-                """INSERT INTO emails (account_id, subject, sender, recipients, date, body, unique_id)
+                """INSERT INTO emails (account_id, subject, sender, recipients, date, body, fingerprint)
                                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
                 emails_to_insert,
             )
