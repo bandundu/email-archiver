@@ -138,10 +138,9 @@ def fetch_and_archive_emails(
 
         cursor = conn.cursor()
 
-        emails_to_insert = []
-        attachments_to_insert = []
         skipped_emails = 0
         failed_emails = 0
+        total_attachments_inserted = 0
 
         for uid in email_uids:
             if protocol == "imap":
@@ -182,7 +181,7 @@ def fetch_and_archive_emails(
                 logging.debug(f"Skipping email with UID {uid} for account {account_id} as it already exists.")
                 skipped_emails += 1
                 continue
-            
+
             if protocol == "imap":
                 _, data = client.uid("fetch", uid, "(RFC822)")
 
@@ -199,8 +198,15 @@ def fetch_and_archive_emails(
             body = extract_body(email_message)
             parsed_date = parse_date(date)
 
-            emails_to_insert.append((account_id, subject, sender, recipients, parsed_date, body, fingerprint))
+            # Insert the email into the database
+            cursor.execute(
+                """INSERT INTO emails (account_id, subject, sender, recipients, date, body, fingerprint)
+                              VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                (account_id, subject, sender, recipients, parsed_date, body, fingerprint),
+            )
+            email_id = cursor.lastrowid
 
+            attachments_inserted = 0
             for part in email_message.walk():
                 if part.get_content_maintype() == "multipart" or part.get("Content-Disposition") is None:
                     continue
@@ -208,28 +214,19 @@ def fetch_and_archive_emails(
                 filename = decode_filename(part.get_filename())
                 if filename:
                     content = part.get_payload(decode=True)
-                    attachments_to_insert.append((len(emails_to_insert), filename, content))
+                    cursor.execute(
+                        """INSERT INTO attachments (email_id, filename, content)
+                                      VALUES (?, ?, ?)""",
+                        (email_id, filename, content),
+                    )
+                    attachments_inserted += 1
 
-        new_emails = len(emails_to_insert)
-        new_attachments = len(attachments_to_insert)
+            conn.commit()
+            logging.info(f"Inserted email with UID {uid.decode() if isinstance(uid, bytes) else uid} for account {account_id} into the database.")
 
-        if emails_to_insert:
-            cursor.executemany(
-                """INSERT INTO emails (account_id, subject, sender, recipients, date, body, fingerprint)
-                                  VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                emails_to_insert,
-            )
-            logging.info(f"Inserted {new_emails} new emails for account {account_id} into the database.")
-
-        if attachments_to_insert:
-            cursor.executemany(
-                """INSERT INTO attachments (email_id, filename, content)
-                                  VALUES (?, ?, ?)""",
-                attachments_to_insert,
-            )
-            logging.info(f"Saved {new_attachments} new attachments for account {account_id}.")
-
-        conn.commit()
+            if attachments_inserted > 0:
+                logging.info(f"Saved {attachments_inserted} attachment(s) for email with UID {uid} and account {account_id}.")
+                total_attachments_inserted += attachments_inserted
 
         if protocol == "imap":
             client.close()
@@ -245,10 +242,11 @@ def fetch_and_archive_emails(
         logging.info(f"Email archiving completed successfully for account {account_id}.")
         logging.info(f"Execution time: {elapsed_time_str}")
         logging.info(f"Total emails found: {total_emails}")
-        logging.info(f"New emails inserted: {new_emails}")
         logging.info(f"Skipped emails (already exists): {skipped_emails}")
         logging.info(f"Failed emails (fetching error): {failed_emails}")
-        logging.info(f"New attachments saved: {new_attachments}")
+        logging.info(f"New emails inserted: {total_emails - skipped_emails - failed_emails}")
+        logging.info(f"New attachments saved: {total_attachments_inserted}")
+        logging.info("-" * 50)
 
     except Exception as e:
         logging.error(f"An error occurred during email archiving for account {account_id}: {str(e)}")
@@ -642,9 +640,9 @@ def run_archiver():
             accounts = read_accounts(conn)
             
             if not accounts:
-                logging.info("No accounts found. Waiting for 5 minutes before the next archiving cycle.")
+                logging.info("No accounts found. Waiting for 30 seconds before the next archiving cycle.")
                 conn.close()
-                time.sleep(30)  # Wait for 5 minutes before the next cycle if no accounts are available
+                time.sleep(30)
                 continue
             
             for account in accounts:
@@ -659,7 +657,7 @@ def run_archiver():
                     encrypted_password,
                     mailbox,
                 )
-                logging.info(f"Email archiving completed for account {account_id}. Waiting for {interval} seconds before the next archiving cycle.")
+                logging.info(f"Email archiving completed for account {account_id}. Waiting for {interval} seconds before processing the next account.")
                 time.sleep(interval)  # Wait for the specified interval before processing the next account
             
             conn.close()
