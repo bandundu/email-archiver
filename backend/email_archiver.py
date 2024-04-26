@@ -17,6 +17,7 @@ from dateutil import parser
 from dotenv import load_dotenv
 from jwt import InvalidTokenError
 import hashlib
+import time
 
 
 # Load environment variables from .env file
@@ -104,11 +105,10 @@ def parse_date(date_str):
         return None
 
 
-import hashlib
-
 def fetch_and_archive_emails(
     conn, account_id, protocol, server, port, username, encrypted_password, mailbox=None
 ):
+    start_time = time.time()
     try:
         logging.info(f"Started email archiving for account {account_id}.")
         if not isinstance(encrypted_password, bytes):
@@ -145,22 +145,31 @@ def fetch_and_archive_emails(
 
         for uid in email_uids:
             if protocol == "imap":
-                _, data = client.uid("fetch", uid, "(RFC822)")
+                _, data = client.uid("fetch", uid, "(BODY.PEEK[HEADER])")
                 if not data or not data[0] or data[0] is None:
-                    logging.warning(f"Failed to fetch email with UID {uid} for account {account_id}.")
+                    logging.warning(f"Failed to fetch email headers with UID {uid} for account {account_id}.")
                     failed_emails += 1
                     continue
-                raw_email = data[0][1]
+                raw_headers = data[0][1]
+                parser = email.parser.BytesParser()
+                headers = parser.parsebytes(raw_headers)
+
+                subject = decode_header(headers["Subject"])
+                sender = decode_header(headers["From"])
+                recipients = decode_header(headers["To"])
+                date = headers["Date"]
+                message_id = headers["Message-ID"]
+
             elif protocol == "pop3":
                 raw_email = b"\n".join(client.retr(uid)[1])
 
-            email_message = email.message_from_bytes(raw_email)
+                email_message = email.message_from_bytes(raw_email)
 
-            subject = decode_header(email_message["Subject"])
-            sender = decode_header(email_message["From"])
-            recipients = decode_header(email_message["To"])
-            date = email_message["Date"]
-            message_id = email_message["Message-ID"]
+                subject = decode_header(email_message["Subject"])
+                sender = decode_header(email_message["From"])
+                recipients = decode_header(email_message["To"])
+                date = email_message["Date"]
+                message_id = email_message["Message-ID"]
 
             # Generate email fingerprint
             fingerprint_data = f"{subject}|{sender}|{recipients}|{date}|{message_id}"
@@ -173,6 +182,19 @@ def fetch_and_archive_emails(
                 logging.debug(f"Skipping email with UID {uid} for account {account_id} as it already exists.")
                 skipped_emails += 1
                 continue
+            
+            if protocol == "imap":
+                _, data = client.uid("fetch", uid, "(RFC822)")
+
+                if not data or not data[0] or data[0] is None:
+                    logging.warning(f"Failed to fetch email with UID {uid} for account {account_id}.")
+                    failed_emails += 1
+                    continue
+                raw_email = data[0][1]
+            elif protocol == "pop3":
+                raw_email = b"\n".join(client.retr(uid)[1])
+
+            email_message = email.message_from_bytes(raw_email)
 
             body = extract_body(email_message)
             parsed_date = parse_date(date)
@@ -215,7 +237,13 @@ def fetch_and_archive_emails(
         elif protocol == "pop3":
             client.quit()
 
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        minutes, seconds = divmod(int(elapsed_time), 60)
+        elapsed_time_str = f"{minutes:02d}:{seconds:02d}"
+
         logging.info(f"Email archiving completed successfully for account {account_id}.")
+        logging.info(f"Execution time: {elapsed_time_str}")
         logging.info(f"Total emails found: {total_emails}")
         logging.info(f"New emails inserted: {new_emails}")
         logging.info(f"Skipped emails (already exists): {skipped_emails}")

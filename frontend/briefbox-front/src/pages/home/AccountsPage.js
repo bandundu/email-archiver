@@ -23,7 +23,7 @@ const AccountsPage = () => {
   const [newAccount, setNewAccount] = useState({
     email: "",
     password: "",
-    protocol: "imap",
+    protocol: "pop3",
     server: "",
     port: "",
     interval: 300, // Default interval of 300 seconds (5 minutes)
@@ -61,7 +61,7 @@ const AccountsPage = () => {
         setNewAccount({
           email: "",
           password: "",
-          protocol: "imap",
+          protocol: "pop3",
           server: "",
           port: "",
         });
@@ -93,7 +93,7 @@ const AccountsPage = () => {
         setNewAccount({
           email: "",
           password: "",
-          protocol: "imap",
+          protocol: "pop3",
           server: "",
           port: "",
           interval: 300, // Reset the interval to the default value
