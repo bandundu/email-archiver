@@ -628,7 +628,7 @@ def run_archiver():
             if not accounts:
                 logging.info("No accounts found. Waiting for 5 minutes before the next archiving cycle.")
                 conn.close()
-                time.sleep(300)  # Wait for 5 minutes before the next cycle if no accounts are available
+                time.sleep(30)  # Wait for 5 minutes before the next cycle if no accounts are available
                 continue
             
             for account in accounts:
