@@ -70,6 +70,8 @@ class AccountData(BaseModel):
     protocol: str
     server: str
     port: int
+    interval: int = 300  # Default interval of 300 seconds (5 minutes)
+
 
 class SearchQuery(BaseModel):
     query: str
@@ -132,13 +134,14 @@ def create_account(account_data: AccountData):
     protocol = account_data.protocol
     server = account_data.server
     port = account_data.port
+    interval = account_data.interval
 
     if not all([email, password, protocol.lower(), server, port]):
         return {"error": "Missing required fields"}
 
     conn = sqlite3.connect("data/email_archive.db")
     try:
-        email_archiver.create_account(conn, email, password, protocol, server, port)
+        email_archiver.create_account(conn, email, password, protocol, server, port, interval)
         conn.close()
         return {"message": "Account created successfully"}
     except sqlite3.IntegrityError:
@@ -195,6 +198,7 @@ def get_accounts():
             "protocol": account[3],
             "server": account[4],
             "port": account[5],
+            "interval": account[7],  # Add the interval field
         }
         for account in accounts
     ]
@@ -208,10 +212,11 @@ def update_account(account_id: int, account_data: AccountData):
     server = account_data.server
     port = account_data.port
     mailbox = account_data.mailbox
+    interval = account_data.interval
 
     conn = sqlite3.connect("data/email_archive.db")
     email_archiver.update_account(
-        conn, account_id, email, password, protocol.lower(), server, port, mailbox
+        conn, account_id, email, password, protocol.lower(), server, port, mailbox, interval
     )
     conn.close()
 

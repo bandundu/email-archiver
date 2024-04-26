@@ -26,6 +26,7 @@ const AccountsPage = () => {
     protocol: "pop3",
     server: "",
     port: "",
+    interval: 300, // Default interval of 300 seconds (5 minutes)
   });
   const [showAddAccountForm, setShowAddAccountForm] = useState(false);
   const [editAccountId, setEditAccountId] = useState(null);
@@ -41,6 +42,7 @@ const AccountsPage = () => {
       const updatedAccounts = response.data.map((account) => ({
         ...account,
         protocol: account.protocol.toUpperCase(),
+        interval: account.interval || 300, // Set a default interval if not provided
       }));
       setAccounts(updatedAccounts);
     } catch (error) {
@@ -80,7 +82,7 @@ const AccountsPage = () => {
     try {
       const response = await axios.post(
         `http://localhost:5050/update_account/${editAccountId}`,
-        newAccount
+        { ...newAccount, interval: newAccount.interval } // Include the interval field
       );
       if (response.status === 200) {
         const updatedAccounts = accounts.map((acc) =>
@@ -94,6 +96,7 @@ const AccountsPage = () => {
           protocol: "pop3",
           server: "",
           port: "",
+          interval: 300, // Reset the interval to the default value
         });
       }
     } catch (error) {
@@ -224,6 +227,22 @@ const AccountsPage = () => {
                 <MenuItem value="pop3">POP3</MenuItem>
                 <MenuItem value="imap">IMAP</MenuItem>
               </TextField>
+              <TextField
+                label="Refresh Interval (seconds)"
+                variant="outlined"
+                size="small"
+                type="number"
+                value={newAccount.interval}
+                onChange={(e) =>
+                  setNewAccount({ ...newAccount, interval: parseInt(e.target.value) })
+                }
+                InputLabelProps={{
+                  style: { color: "grey" },
+                }}
+                InputProps={{
+                  style: { color: "white" },
+                }}
+              />
               <Button
                 variant="contained"
                 color="primary"
@@ -286,6 +305,9 @@ const AccountsPage = () => {
                   </Typography>
                   <Typography variant="body1" sx={{ color: "#bdbdbd" }}>
                     Protocol: {account.protocol}
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: "#bdbdbd" }}>
+                    Interval: {account.interval} seconds
                   </Typography>
                 </CardContent>
               </Collapse>

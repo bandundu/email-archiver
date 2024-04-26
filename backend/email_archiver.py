@@ -47,7 +47,8 @@ def initialize_database():
                            protocol TEXT,
                            server TEXT,
                            port INTEGER,
-                           mailbox TEXT)"""
+                           mailbox TEXT,
+                           interval INTEGER DEFAULT 300)"""
         )
 
         cursor.execute(
@@ -302,7 +303,7 @@ def fetch_and_archive_emails(
         logging.error(f"Exception details: {traceback.format_exc()}")
 
 
-def create_account(conn, email, password, protocol, server, port):
+def create_account(conn, email, password, protocol, server, port, interval=300):
     logging.info(f"Creating {protocol.upper()} account for {email}.")
     mailbox = "INBOX" if protocol == "imap" else None
 
@@ -323,9 +324,9 @@ def create_account(conn, email, password, protocol, server, port):
 
         cursor = conn.cursor()
         cursor.execute(
-            """INSERT INTO accounts (email, password, protocol, server, port, mailbox)
-                          VALUES (?, ?, ?, ?, ?, ?)""",
-            (email, encrypted_password, protocol, server, int(port), mailbox),
+        """INSERT INTO accounts (email, password, protocol, server, port, mailbox, interval)
+                      VALUES (?, ?, ?, ?, ?, ?, ?)""",
+        (email, encrypted_password, protocol, server, int(port), mailbox, interval),
         )
         account_id = cursor.lastrowid
         conn.commit()
@@ -377,7 +378,7 @@ def get_account(conn, account_id):
         return None
 
 
-def update_account(conn, account_id, email, password, protocol, server, port, mailbox):
+def update_account(conn, account_id, email, password, protocol, server, port, mailbox, interval):
     logging.info(f"Updating account {account_id} with email {email}.")
 
     # Encrypt the new password
@@ -386,9 +387,9 @@ def update_account(conn, account_id, email, password, protocol, server, port, ma
     cursor = conn.cursor()
     cursor.execute(
         """UPDATE accounts
-                      SET email = ?, password = ?, protocol = ?, server = ?, port = ?, mailbox = ?
+                      SET email = ?, password = ?, protocol = ?, server = ?, port = ?, mailbox = ?, interval = ?
                       WHERE id = ?""",
-        (email, encrypted_password, protocol, server, port, mailbox, account_id),
+        (email, encrypted_password, protocol, server, port, mailbox, interval, account_id),
     )
     conn.commit()
     logging.info(f"Account {account_id} updated successfully.")
@@ -595,9 +596,7 @@ def run_archiver_once(account_id):
         cursor.execute("SELECT * FROM accounts WHERE id = ?", (account_id,))
         account = cursor.fetchone()
         if account:
-            account_id, email, encrypted_password, protocol, server, port, mailbox = (
-                account
-            )
+            account_id, email, encrypted_password, protocol, server, port, mailbox, interval = account
             fetch_and_archive_emails(
                 conn,
                 account_id,
@@ -625,16 +624,15 @@ def run_archiver():
             logging.info("Starting email archiving cycle...")
             conn = sqlite3.connect("data/email_archive.db")
             accounts = read_accounts(conn)
+            
+            if not accounts:
+                logging.info("No accounts found. Waiting for 5 minutes before the next archiving cycle.")
+                conn.close()
+                time.sleep(300)  # Wait for 5 minutes before the next cycle if no accounts are available
+                continue
+            
             for account in accounts:
-                (
-                    account_id,
-                    email,
-                    encrypted_password,
-                    protocol,
-                    server,
-                    port,
-                    mailbox,
-                ) = account
+                account_id, email, encrypted_password, protocol, server, port, mailbox, interval = account
                 fetch_and_archive_emails(
                     conn,
                     account_id,
@@ -645,12 +643,15 @@ def run_archiver():
                     encrypted_password,
                     mailbox,
                 )
+                logging.info(f"Email archiving completed for account {account_id}. Waiting for {interval} seconds before the next archiving cycle.")
+                time.sleep(interval)  # Wait for the specified interval before processing the next account
+            
             conn.close()
             logging.info("Email archiving cycle completed.")
-            time.sleep(300)  # Wait for 5 minutes before the next archiving cycle
         except Exception as e:
             logging.error(f"An error occurred during email archiving: {str(e)}")
-            time.sleep(300)  # Wait for 5 minutes before retrying
+            logging.error(f"Exception details: {traceback.format_exc()}")
+            time.sleep(300)  # Wait for 5 minutes before retrying in case of an error
 
 
 if __name__ == "__main__":
