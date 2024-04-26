@@ -109,198 +109,184 @@ def fetch_and_archive_emails(
         logging.info(f"Started email archiving for account {account_id}.")
         if not isinstance(encrypted_password, bytes):
             encrypted_password = encrypted_password.encode()
-        # In email_archiver.py, in the fetch_and_archive_emails function
         try:
             password = cipher_suite.decrypt(encrypted_password).decode()
         except InvalidTokenError as e:
-            print("Decryption Error:", str(e))
+            logging.error(f"Decryption Error for account {account_id}: {str(e)}")
+            return
+
         if protocol == "imap":
-            # Connect to the IMAP server
             client = imaplib.IMAP4_SSL(server, port)
             client._mode_utf8()
             client.login(username, password)
-
-            # Select the mailbox to fetch emails from
             client.select(mailbox, readonly=True)
-
-            # Fetch email UIDs
             _, data = client.uid("search", None, "ALL")
             email_uids = data[0].split()
         elif protocol == "pop3":
-            # Connect to the POP3 server
             client = poplib.POP3_SSL(server, port)
             client.user(username)
             client.pass_(password)
-
-            # Get the number of emails
             num_emails = len(client.list()[1])
             email_uids = range(1, num_emails + 1)
 
-        logging.info(f"Found {len(email_uids)} emails for account {account_id}.")
+        total_emails = len(email_uids)
+        logging.info(f"Found {total_emails} emails for account {account_id}.")
 
         cursor = conn.cursor()
 
-        for uid in email_uids:
-            logging.debug(f"Processing email with UID {uid} for account {account_id}.")
+        # Retrieve existing unique IDs for the account
+        cursor.execute("SELECT unique_id FROM emails WHERE account_id = ?", (account_id,))
+        existing_uids = set(row[0] for row in cursor.fetchall())
 
+        emails_to_insert = []
+        attachments_to_insert = []
+        skipped_emails = 0
+        failed_emails = 0
+
+        for uid in email_uids:
             if protocol == "imap":
-                # Fetch the email content using IMAP
                 _, data = client.uid("fetch", uid, "(RFC822)")
                 if not data or not data[0] or data[0] is None:
-                    logging.error(f"Failed to fetch email with UID {uid}.")
-                    continue  # Skip this email and proceed to the next one
+                    logging.warning(f"Failed to fetch email with UID {uid} for account {account_id}.")
+                    failed_emails += 1
+                    continue
                 raw_email = data[0][1]
             elif protocol == "pop3":
-                # Fetch the email content using POP3
                 raw_email = b"\n".join(client.retr(uid)[1])
 
-            # Parse the email content
             email_message = email.message_from_bytes(raw_email)
 
-            # Extract email metadata
-            if email_message["Subject"] is not None:
-                subject_parts = email.header.decode_header(email_message["Subject"])
-                decoded_subject_parts = []
-                for part, encoding in subject_parts:
-                    if isinstance(part, bytes):
-                        decoded_subject_parts.append(part.decode(encoding or "utf-8"))
-                    else:
-                        decoded_subject_parts.append(part)
-                subject = "".join(decoded_subject_parts)
-            else:
-                subject = ""  # Set subject to an empty string if 'Subject' header is missing
-
-
-            # Check if 'From' header exists before decoding
-            if email_message["From"] is not None:
-                sender_parts = email.header.decode_header(email_message["From"])
-                decoded_sender_parts = []
-                for part, encoding in sender_parts:
-                    if isinstance(part, bytes):
-                        decoded_sender_parts.append(part.decode(encoding or "utf-8"))
-                    else:
-                        decoded_sender_parts.append(part)
-                sender = "".join(decoded_sender_parts)
-            else:
-                sender = ""  # Set sender to an empty string if 'From' header is missing
-
-            # Check if 'To' header exists before decoding
-            if email_message["To"] is not None:
-                recipients_parts = email.header.decode_header(email_message["To"])
-                decoded_recipients_parts = []
-                for part, encoding in recipients_parts:
-                    if isinstance(part, bytes):
-                        decoded_recipients_parts.append(part.decode(encoding or "utf-8"))
-                    else:
-                        decoded_recipients_parts.append(part)
-                recipients = "".join(decoded_recipients_parts)
-            else:
-                recipients = ""  # Set recipients to an empty string if 'To' header is missing
-
-
+            subject = decode_header(email_message["Subject"])
+            sender = decode_header(email_message["From"])
+            recipients = decode_header(email_message["To"])
             date = email_message["Date"]
             message_id = email_message["Message-ID"]
 
-            # Create a unique identifier for the email
             if protocol == "imap":
                 unique_id = str(uid)
             elif protocol == "pop3":
                 unique_id = f"{message_id}_{date}_{sender}_{subject}"
 
-            # Check if the email already exists in the database
-            cursor.execute("SELECT id FROM emails WHERE unique_id = ?", (unique_id,))
-            existing_email = cursor.fetchone()
-            if existing_email:
-                logging.debug(
-                    f"Skipping email with UID {uid} for account {account_id} as it already exists."
-                )
-                continue  # Skip archiving if the email already exists
+            if unique_id in existing_uids:
+                logging.debug(f"Skipping email with UID {uid} for account {account_id} as it already exists.")
+                skipped_emails += 1
+                continue
 
-            # Extract email body
-            body = ""
-            if email_message.is_multipart():
-                for part in email_message.walk():
-                    content_type = part.get_content_type()
-                    if content_type == "text/plain" or content_type == "text/html":
-                        payload = part.get_payload(decode=True)
-                        charset = part.get_content_charset()
-                        if charset:
-                            body += payload.decode(charset, errors="replace")
-                        else:
-                            body += payload.decode(errors="replace")
-            else:
-                payload = email_message.get_payload(decode=True)
-                charset = email_message.get_content_charset()
-                if charset:
-                    body = payload.decode(charset, errors="replace")
-                else:
-                    body = payload.decode(errors="replace")
-
-            # Insert email metadata into the database
+            body = extract_body(email_message)
             parsed_date = parse_date(date)
-            cursor.execute(
-                """INSERT INTO emails (account_id, subject, sender, recipients, date, body, unique_id)
-                              VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                (account_id, subject, sender, recipients, parsed_date, body, unique_id),
-            )
-            email_id = cursor.lastrowid
 
-            logging.info(
-                f"Inserted email with UID {uid} for account {account_id} into the database."
-            )
+            emails_to_insert.append((account_id, subject, sender, recipients, parsed_date, body, unique_id))
 
-            # Save attachments
             for part in email_message.walk():
-                if part.get_content_maintype() == "multipart":
-                    continue
-                if part.get("Content-Disposition") is None:
+                if part.get_content_maintype() == "multipart" or part.get("Content-Disposition") is None:
                     continue
 
-                filename = part.get_filename()
+                filename = decode_filename(part.get_filename())
                 if filename:
-                    filename_parts = email.header.decode_header(filename)
-                    decoded_filename_parts = []
-                    for filename_part, encoding in filename_parts:
-                        if isinstance(filename_part, bytes):
-                            decoded_filename_parts.append(
-                                filename_part.decode(encoding or "utf-8")
-                            )
-                        else:
-                            decoded_filename_parts.append(filename_part)
-                    filename = "".join(decoded_filename_parts)
-
-                    logging.info(
-                        f"Found attachment {filename} for email with UID {uid} for account {account_id}."
-                    )
                     content = part.get_payload(decode=True)
-                    cursor.execute(
-                        """INSERT INTO attachments (email_id, filename, content)
-                                    VALUES (?, ?, ?)""",
-                        (email_id, filename, content),
-                    )
+                    attachments_to_insert.append((len(emails_to_insert), filename, content))
 
-                    logging.info(
-                        f"Saved attachment {filename} for email with UID {uid} for account {account_id}."
-                    )
+        new_emails = len(emails_to_insert)
+        new_attachments = len(attachments_to_insert)
+
+        if emails_to_insert:
+            cursor.executemany(
+                """INSERT INTO emails (account_id, subject, sender, recipients, date, body, unique_id)
+                                  VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                emails_to_insert,
+            )
+            logging.info(f"Inserted {new_emails} new emails for account {account_id} into the database.")
+
+        if attachments_to_insert:
+            cursor.executemany(
+                """INSERT INTO attachments (email_id, filename, content)
+                                  VALUES (?, ?, ?)""",
+                attachments_to_insert,
+            )
+            logging.info(f"Saved {new_attachments} new attachments for account {account_id}.")
 
         conn.commit()
 
-        # Close the connection
         if protocol == "imap":
             client.close()
             client.logout()
         elif protocol == "pop3":
             client.quit()
 
-        logging.info(
-            f"Email archiving completed successfully for account {account_id}."
-        )
+        logging.info(f"Email archiving completed successfully for account {account_id}.")
+        logging.info(f"Total emails found: {total_emails}")
+        logging.info(f"New emails inserted: {new_emails}")
+        logging.info(f"Skipped emails (already exists): {skipped_emails}")
+        logging.info(f"Failed emails (fetching error): {failed_emails}")
+        logging.info(f"New attachments saved: {new_attachments}")
 
     except Exception as e:
-        logging.error(
-            f"An error occurred during email archiving for account {account_id}: {str(e)}"
-        )
+        logging.error(f"An error occurred during email archiving for account {account_id}: {str(e)}")
         logging.error(f"Exception details: {traceback.format_exc()}")
+
+
+def decode_header(header):
+    if header is None:
+        return ""
+    parts = email.header.decode_header(header)
+    decoded_parts = [part.decode(encoding or "utf-8") if isinstance(part, bytes) else part for part, encoding in parts]
+    return "".join(decoded_parts)
+
+
+def extract_body(email_message):
+    body = ""
+    if email_message.is_multipart():
+        for part in email_message.walk():
+            content_type = part.get_content_type()
+            if content_type in ["text/plain", "text/html"]:
+                payload = part.get_payload(decode=True)
+                charset = part.get_content_charset()
+                body += payload.decode(charset or "utf-8", errors="replace")
+    else:
+        payload = email_message.get_payload(decode=True)
+        charset = email_message.get_content_charset()
+        body = payload.decode(charset or "utf-8", errors="replace")
+    return body
+
+
+def decode_filename(filename):
+    if filename is None:
+        return ""
+    parts = email.header.decode_header(filename)
+    decoded_parts = [part.decode(encoding or "utf-8") if isinstance(part, bytes) else part for part, encoding in parts]
+    return "".join(decoded_parts)
+
+
+def decode_header(header):
+    if header is None:
+        return ""
+    parts = email.header.decode_header(header)
+    decoded_parts = [part.decode(encoding or "utf-8") if isinstance(part, bytes) else part for part, encoding in parts]
+    return "".join(decoded_parts)
+
+
+def extract_body(email_message):
+    body = ""
+    if email_message.is_multipart():
+        for part in email_message.walk():
+            content_type = part.get_content_type()
+            if content_type in ["text/plain", "text/html"]:
+                payload = part.get_payload(decode=True)
+                charset = part.get_content_charset()
+                body += payload.decode(charset or "utf-8", errors="replace")
+    else:
+        payload = email_message.get_payload(decode=True)
+        charset = email_message.get_content_charset()
+        body = payload.decode(charset or "utf-8", errors="replace")
+    return body
+
+
+def decode_filename(filename):
+    if filename is None:
+        return ""
+    parts = email.header.decode_header(filename)
+    decoded_parts = [part.decode(encoding or "utf-8") if isinstance(part, bytes) else part for part, encoding in parts]
+    return "".join(decoded_parts)
 
 
 def create_account(conn, email, password, protocol, server, port, interval=300):
@@ -332,8 +318,8 @@ def create_account(conn, email, password, protocol, server, port, interval=300):
         conn.commit()
         logging.info(f"{protocol.upper()} account created successfully for {email}.")
 
-        # Run email archiving for the newly created account
-        run_archiver_once(account_id)
+        # Run email archiving for the newly created account TODO: adjust this as it creates duplicate records on application start
+        # run_archiver_once(account_id)
 
         return account_id
     except (imaplib.IMAP4.error, poplib.error_proto) as e:
