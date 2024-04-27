@@ -117,7 +117,11 @@ def fetch_and_archive_emails(
             password = cipher_suite.decrypt(encrypted_password).decode()
         except InvalidTokenError as e:
             logging.error(f"Decryption Error for account {account_id}: {str(e)}")
-            return
+            return 0
+
+        cursor = conn.cursor()
+        cursor.execute("SELECT uid FROM email_uids WHERE account_id = ?", (account_id,))
+        last_uid = cursor.fetchone()
 
         if protocol == "imap":
             client = imaplib.IMAP4_SSL(server, port)
@@ -125,50 +129,65 @@ def fetch_and_archive_emails(
             client.login(username, password)
             client.select(mailbox, readonly=True)
             _, data = client.uid("search", None, "ALL")
-            email_uids = data[0].split()
+            all_uids = data[0].split()
+
+            if last_uid:
+                _, data = client.uid("search", None, f"UID {last_uid[0]}:*")
+                email_uids = data[0].split()
+            else:
+                email_uids = all_uids
+
+            if all_uids:
+                _, data = client.status(mailbox, "(UIDNEXT)")
+                uidnext = data[0].decode().split()[-1].strip(")")
+            else:
+                uidnext = None
+
+            if email_uids:
+                email_uids_str = [uid.decode() for uid in email_uids]  # Convert UIDs to strings
+                _, data = client.uid("fetch", ",".join(email_uids_str), "(BODY.PEEK[])")
+                raw_emails = []
+                for item in data:
+                    if isinstance(item, tuple) and len(item) > 1:
+                        raw_emails.append(item[1])  # Extract email data from tuple
+            else:
+                raw_emails = []
+
         elif protocol == "pop3":
             client = poplib.POP3_SSL(server, port)
             client.user(username)
             client.pass_(password)
-            num_emails = len(client.list()[1])
-            email_uids = range(1, num_emails + 1)
+            if last_uid:
+                num_emails = len(client.list()[1])
+                email_uids = range(last_uid[0] + 1, num_emails + 1)
+            else:
+                num_emails = len(client.list()[1])
+                email_uids = range(1, num_emails + 1)
+
+            # Fetch email headers and bodies in bulk
+            raw_emails = [b"\n".join(client.retr(uid)[1]) for uid in email_uids]
 
         total_emails = len(email_uids)
-        logging.info(f"Found {total_emails} emails for account {account_id}.")
-
-        cursor = conn.cursor()
+        logging.info(f"Found {total_emails} new emails for account {account_id}.")
 
         skipped_emails = 0
         failed_emails = 0
         total_attachments_inserted = 0
+        new_emails_inserted = 0
 
-        for uid in email_uids:
-            if protocol == "imap":
-                _, data = client.uid("fetch", uid, "(BODY.PEEK[HEADER])")
-                if not data or not data[0] or data[0] is None:
-                    logging.warning(f"Failed to fetch email headers with UID {uid} for account {account_id}.")
-                    failed_emails += 1
-                    continue
-                raw_headers = data[0][1]
-                parser = email.parser.BytesParser()
-                headers = parser.parsebytes(raw_headers)
+        for uid, raw_email in zip(email_uids, raw_emails):
+            if not raw_email:
+                logging.warning(f"Failed to fetch email with UID {uid.decode() if isinstance(uid, bytes) else uid} for account {account_id}.")
+                failed_emails += 1
+                continue
 
-                subject = decode_header(headers["Subject"])
-                sender = decode_header(headers["From"])
-                recipients = decode_header(headers["To"])
-                date = headers["Date"]
-                message_id = headers["Message-ID"]
+            email_message = email.message_from_bytes(raw_email)
 
-            elif protocol == "pop3":
-                raw_email = b"\n".join(client.retr(uid)[1])
-
-                email_message = email.message_from_bytes(raw_email)
-
-                subject = decode_header(email_message["Subject"])
-                sender = decode_header(email_message["From"])
-                recipients = decode_header(email_message["To"])
-                date = email_message["Date"]
-                message_id = email_message["Message-ID"]
+            subject = decode_header(email_message["Subject"])
+            sender = decode_header(email_message["From"])
+            recipients = decode_header(email_message["To"])
+            date = email_message["Date"]
+            message_id = email_message["Message-ID"]
 
             # Generate email fingerprint
             fingerprint_data = f"{subject}|{sender}|{recipients}|{date}|{message_id}"
@@ -178,22 +197,9 @@ def fetch_and_archive_emails(
             cursor.execute("SELECT id FROM emails WHERE fingerprint = ?", (fingerprint,))
             existing_email = cursor.fetchone()
             if existing_email:
-                logging.debug(f"Skipping email with UID {uid} for account {account_id} as it already exists.")
+                logging.debug(f"Skipping email with UID {uid.decode() if isinstance(uid, bytes) else uid} for account {account_id} as it already exists.")
                 skipped_emails += 1
                 continue
-
-            if protocol == "imap":
-                _, data = client.uid("fetch", uid, "(RFC822)")
-
-                if not data or not data[0] or data[0] is None:
-                    logging.warning(f"Failed to fetch email with UID {uid} for account {account_id}.")
-                    failed_emails += 1
-                    continue
-                raw_email = data[0][1]
-            elif protocol == "pop3":
-                raw_email = b"\n".join(client.retr(uid)[1])
-
-            email_message = email.message_from_bytes(raw_email)
 
             body = extract_body(email_message)
             parsed_date = parse_date(date)
@@ -205,6 +211,7 @@ def fetch_and_archive_emails(
                 (account_id, subject, sender, recipients, parsed_date, body, fingerprint),
             )
             email_id = cursor.lastrowid
+            new_emails_inserted += 1
 
             attachments_inserted = 0
             for part in email_message.walk():
@@ -225,8 +232,11 @@ def fetch_and_archive_emails(
             logging.info(f"Inserted email with UID {uid.decode() if isinstance(uid, bytes) else uid} for account {account_id} into the database.")
 
             if attachments_inserted > 0:
-                logging.info(f"Saved {attachments_inserted} attachment(s) for email with UID {uid} and account {account_id}.")
+                logging.info(f"Saved {attachments_inserted} attachment(s) for email with UID {uid.decode() if isinstance(uid, bytes) else uid} and account {account_id}.")
                 total_attachments_inserted += attachments_inserted
+
+        if protocol == "imap" and uidnext:
+            cursor.execute("INSERT OR REPLACE INTO email_uids (account_id, uid) VALUES (?, ?)", (account_id, uidnext))
 
         if protocol == "imap":
             client.close()
@@ -244,13 +254,16 @@ def fetch_and_archive_emails(
         logging.info(f"Total emails found: {total_emails}")
         logging.info(f"Skipped emails (already exists): {skipped_emails}")
         logging.info(f"Failed emails (fetching error): {failed_emails}")
-        logging.info(f"New emails inserted: {total_emails - skipped_emails - failed_emails}")
+        logging.info(f"New emails inserted: {new_emails_inserted}")
         logging.info(f"New attachments saved: {total_attachments_inserted}")
         logging.info("-" * 50)
+
+        return new_emails_inserted
 
     except Exception as e:
         logging.error(f"An error occurred during email archiving for account {account_id}: {str(e)}")
         logging.error(f"Exception details: {traceback.format_exc()}")
+        return 0
 
 
 def decode_header(header):
