@@ -10,6 +10,10 @@ import {
   CardActions,
   Collapse,
   MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import { motion } from "framer-motion";
 import BaseLayout from "./BaseLayout";
@@ -23,14 +27,17 @@ const AccountsPage = () => {
   const [newAccount, setNewAccount] = useState({
     email: "",
     password: "",
-    protocol: "pop3",
+    protocol: "imap",
     server: "",
     port: "",
-    interval: 300, // Default interval of 300 seconds (5 minutes)
+    interval: 300,
+    selectedInboxes: [],
   });
+  const [availableInboxes, setAvailableInboxes] = useState([]);
   const [showAddAccountForm, setShowAddAccountForm] = useState(false);
   const [editAccountId, setEditAccountId] = useState(null);
   const [expandedAccountId, setExpandedAccountId] = useState(null);
+  const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
 
   useEffect(() => {
     fetchAccounts();
@@ -52,23 +59,78 @@ const AccountsPage = () => {
 
   const handleAddAccount = async () => {
     try {
-      const response = await axios.post(
-        "http://localhost:5050/create_account",
-        newAccount
-      );
+      if (newAccount.protocol === "imap") {
+        // Fetch available inboxes for IMAP accounts
+        const inboxResponse = await axios.post(
+          "http://localhost:5050/get_available_inboxes",
+          {
+            email: newAccount.email,
+            password: newAccount.password,
+            protocol: newAccount.protocol,
+            server: newAccount.server,
+            port: newAccount.port,
+          }
+        );
+        const availableInboxes = inboxResponse.data.available_inboxes;
+        setAvailableInboxes(availableInboxes);
+  
+        // Set selectedInboxes to include all available inboxes by default
+        setNewAccount((prevAccount) => ({
+          ...prevAccount,
+          selectedInboxes: availableInboxes,
+        }));
+  
+        // Open the confirmation dialog for IMAP accounts
+        setShowConfirmationDialog(true);
+      } else {
+        // Create POP3 account without inbox selection
+        const response = await axios.post(
+          "http://localhost:5050/create_account",
+          newAccount
+        );
+        if (response.status === 200) {
+          setAccounts([...accounts, response.data]);
+          setNewAccount({
+            email: "",
+            password: "",
+            protocol: "imap",
+            server: "",
+            port: "",
+            interval: 300,
+            selectedInboxes: [],
+          });
+          setShowAddAccountForm(false);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching available inboxes or creating account:", error);
+    }
+  };
+
+  const handleConfirmAddAccount = async () => {
+    try {
+      // Create the account with selected inboxes for IMAP accounts
+      const requestData = {
+        ...newAccount,
+        ...(newAccount.protocol === "imap" && { selected_inboxes: newAccount.selectedInboxes }),
+      };
+      const response = await axios.post("http://localhost:5050/create_account", requestData);
       if (response.status === 200) {
         setAccounts([...accounts, response.data]);
         setNewAccount({
           email: "",
           password: "",
-          protocol: "pop3",
+          protocol: "imap",
           server: "",
           port: "",
+          interval: 300,
+          selectedInboxes: [],
         });
+        setShowConfirmationDialog(false);
         setShowAddAccountForm(false);
       }
     } catch (error) {
-      console.error("Error adding account:", error);
+      console.error("Error creating account:", error);
     }
   };
 
@@ -224,8 +286,8 @@ const AccountsPage = () => {
                   style: { color: "white" },
                 }}
               >
-                <MenuItem value="pop3">POP3</MenuItem>
                 <MenuItem value="imap">IMAP</MenuItem>
+                <MenuItem value="pop3">POP3</MenuItem>
               </TextField>
               <TextField
                 label="Refresh Interval (seconds)"
@@ -243,6 +305,38 @@ const AccountsPage = () => {
                   style: { color: "white" },
                 }}
               />
+              {newAccount.protocol === "imap" && (
+                <Box sx={{ marginTop: "10px" }}>
+                  <Typography variant="subtitle1" sx={{ color: "white" }}>
+                    Select Inboxes:
+                  </Typography>
+                  {availableInboxes.map((inbox) => (
+                    <Box key={inbox} sx={{ display: "flex", alignItems: "center" }}>
+                      <input
+                        type="checkbox"
+                        id={inbox}
+                        value={inbox}
+                        checked={newAccount.selectedInboxes.includes(inbox)}
+                        onChange={(e) => {
+                          const selectedInboxes = [...newAccount.selectedInboxes];
+                          if (e.target.checked) {
+                            selectedInboxes.push(inbox);
+                          } else {
+                            const index = selectedInboxes.indexOf(inbox);
+                            if (index > -1) {
+                              selectedInboxes.splice(index, 1);
+                            }
+                          }
+                          setNewAccount({ ...newAccount, selectedInboxes });
+                        }}
+                      />
+                      <label htmlFor={inbox} style={{ color: "white", marginLeft: "5px" }}>
+                        {inbox}
+                      </label>
+                    </Box>
+                  ))}
+                </Box>
+              )}
               <Button
                 variant="contained"
                 color="primary"
@@ -252,6 +346,44 @@ const AccountsPage = () => {
               </Button>
             </Box>
           </Box>
+        )}
+        {showConfirmationDialog && newAccount.protocol === "imap" && (
+          <Dialog open={showConfirmationDialog} onClose={() => setShowConfirmationDialog(false)}>
+            <DialogTitle>Select Inboxes</DialogTitle>
+            <DialogContent>
+              {availableInboxes.map((inbox) => (
+                <Box key={inbox} sx={{ display: "flex", alignItems: "center" }}>
+                  <input
+                    type="checkbox"
+                    id={inbox}
+                    value={inbox}
+                    checked={newAccount.selectedInboxes.includes(inbox)}
+                    onChange={(e) => {
+                      const selectedInboxes = [...newAccount.selectedInboxes];
+                      if (e.target.checked) {
+                        selectedInboxes.push(inbox);
+                      } else {
+                        const index = selectedInboxes.indexOf(inbox);
+                        if (index > -1) {
+                          selectedInboxes.splice(index, 1);
+                        }
+                      }
+                      setNewAccount({ ...newAccount, selectedInboxes });
+                    }}
+                  />
+                  <label htmlFor={inbox} style={{ marginLeft: "5px" }}>
+                    {inbox}
+                  </label>
+                </Box>
+              ))}
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setShowConfirmationDialog(false)}>Cancel</Button>
+              <Button onClick={handleConfirmAddAccount} color="primary">
+                Confirm
+              </Button>
+            </DialogActions>
+          </Dialog>
         )}
         <Typography variant="h6" sx={{ marginBottom: "10px" }}>
           Existing Accounts
@@ -309,6 +441,11 @@ const AccountsPage = () => {
                   <Typography variant="body1" sx={{ color: "#bdbdbd" }}>
                     Interval: {account.interval} seconds
                   </Typography>
+                  {account.selected_inboxes && (
+                    <Typography variant="body1" sx={{ color: "#bdbdbd" }}>
+                      Selected Inboxes: {account.selected_inboxes.join(", ")}
+                    </Typography>
+                  )}
                 </CardContent>
               </Collapse>
             </Card>

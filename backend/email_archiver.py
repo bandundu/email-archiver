@@ -51,6 +51,8 @@ def initialize_database():
                            server TEXT,
                            port INTEGER,
                            mailbox TEXT,
+                           available_inboxes TEXT,
+                           selected_inboxes TEXT,
                            interval INTEGER DEFAULT 300)"""
         )
 
@@ -106,7 +108,7 @@ def parse_date(date_str):
 
 
 def fetch_and_archive_emails(
-    conn, account_id, protocol, server, port, username, encrypted_password, mailbox=None
+    conn, account_id, protocol, server, port, username, encrypted_password, selected_inboxes=None
 ):
     start_time = time.time()
     try:
@@ -127,31 +129,112 @@ def fetch_and_archive_emails(
             client = imaplib.IMAP4_SSL(server, port)
             client._mode_utf8()
             client.login(username, password)
-            client.select(mailbox, readonly=True)
-            _, data = client.uid("search", None, "ALL")
-            all_uids = data[0].split()
-
-            if last_uid:
-                _, data = client.uid("search", None, f"UID {last_uid[0]}:*")
-                email_uids = data[0].split()
+            
+            if selected_inboxes:
+                inboxes = selected_inboxes.split(",")
             else:
-                email_uids = all_uids
+                _, mailboxes = client.list()
+                inboxes = [mailbox.decode().split('"')[-1] for mailbox in mailboxes]
 
-            if all_uids:
-                _, data = client.status(mailbox, "(UIDNEXT)")
-                uidnext = data[0].decode().split()[-1].strip(")")
-            else:
-                uidnext = None
+            for inbox in inboxes:
+                if inbox:  # Check if inbox is not empty
+                    
+                    client.select(inbox, readonly=True)
+                    _, data = client.uid("search", None, "ALL")
+                    all_uids = data[0].split()
 
-            if email_uids:
-                email_uids_str = [uid.decode() for uid in email_uids]  # Convert UIDs to strings
-                _, data = client.uid("fetch", ",".join(email_uids_str), "(BODY.PEEK[])")
-                raw_emails = []
-                for item in data:
-                    if isinstance(item, tuple) and len(item) > 1:
-                        raw_emails.append(item[1])  # Extract email data from tuple
-            else:
-                raw_emails = []
+                    if last_uid:
+                        _, data = client.uid("search", None, f"UID {last_uid[0]}:*")
+                        email_uids = data[0].split()
+                    else:
+                        email_uids = all_uids
+
+                    if all_uids:
+                        _, data = client.status(inbox, "(UIDNEXT)")
+                        uidnext = data[0].decode().split()[-1].strip(")")
+                    else:
+                        uidnext = None
+
+                    if email_uids:
+                        email_uids_str = [uid.decode() for uid in email_uids]
+                        _, data = client.uid("fetch", ",".join(email_uids_str), "(BODY.PEEK[])")
+                        raw_emails = []
+                        for item in data:
+                            if isinstance(item, tuple) and len(item) > 1:
+                                raw_emails.append(item[1])
+                    else:
+                        raw_emails = []
+
+                    total_emails = len(email_uids)
+                    logging.info(f"Found {total_emails} new emails for account {account_id} in inbox {inbox}.")
+
+                    skipped_emails = 0
+                    failed_emails = 0
+                    total_attachments_inserted = 0
+                    new_emails_inserted = 0
+
+                    for uid, raw_email in zip(email_uids, raw_emails):
+                        if not raw_email:
+                            logging.warning(f"Failed to fetch email with UID {uid.decode() if isinstance(uid, bytes) else uid} for account {account_id} in inbox {inbox}.")
+                            failed_emails += 1
+                            continue
+
+                        email_message = email.message_from_bytes(raw_email)
+
+                        subject = decode_header(email_message["Subject"])
+                        sender = decode_header(email_message["From"])
+                        recipients = decode_header(email_message["To"])
+                        date = email_message["Date"]
+                        message_id = email_message["Message-ID"]
+
+                        fingerprint_data = f"{subject}|{sender}|{recipients}|{date}|{message_id}"
+                        fingerprint = hashlib.sha256(fingerprint_data.encode()).hexdigest()
+
+                        cursor.execute("SELECT id FROM emails WHERE fingerprint = ?", (fingerprint,))
+                        existing_email = cursor.fetchone()
+                        if existing_email:
+                            logging.debug(f"Skipping email with UID {uid.decode() if isinstance(uid, bytes) else uid} for account {account_id} in inbox {inbox} as it already exists.")
+                            skipped_emails += 1
+                            continue
+
+                        body = extract_body(email_message)
+                        parsed_date = parse_date(date)
+
+                        cursor.execute(
+                            """INSERT INTO emails (account_id, subject, sender, recipients, date, body, fingerprint)
+                                          VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                            (account_id, subject, sender, recipients, parsed_date, body, fingerprint),
+                        )
+                        email_id = cursor.lastrowid
+                        new_emails_inserted += 1
+
+                        attachments_inserted = 0
+                        for part in email_message.walk():
+                            if part.get_content_maintype() == "multipart" or part.get("Content-Disposition") is None:
+                                continue
+
+                            filename = decode_filename(part.get_filename())
+                            if filename:
+                                content = part.get_payload(decode=True)
+                                cursor.execute(
+                                    """INSERT INTO attachments (email_id, filename, content)
+                                                  VALUES (?, ?, ?)""",
+                                    (email_id, filename, content),
+                                )
+                                attachments_inserted += 1
+
+                        conn.commit()
+                        logging.info(f"Inserted email with UID {uid.decode() if isinstance(uid, bytes) else uid} for account {account_id} in inbox {inbox} into the database.")
+
+                        if attachments_inserted > 0:
+                            logging.info(f"Saved {attachments_inserted} attachment(s) for email with UID {uid.decode() if isinstance(uid, bytes) else uid} and account {account_id} in inbox {inbox}.")
+                            total_attachments_inserted += attachments_inserted
+
+                    if uidnext:
+                        cursor.execute("INSERT OR REPLACE INTO email_uids (account_id, uid) VALUES (?, ?)", (account_id, uidnext))
+
+            client.close()
+            client.logout()
 
         elif protocol == "pop3":
             client = poplib.POP3_SSL(server, port)
@@ -164,85 +247,73 @@ def fetch_and_archive_emails(
                 num_emails = len(client.list()[1])
                 email_uids = range(1, num_emails + 1)
 
-            # Fetch email headers and bodies in bulk
             raw_emails = [b"\n".join(client.retr(uid)[1]) for uid in email_uids]
+            client.quit()
 
-        total_emails = len(email_uids)
-        logging.info(f"Found {total_emails} new emails for account {account_id}.")
+            total_emails = len(email_uids)
+            logging.info(f"Found {total_emails} new emails for account {account_id}.")
 
-        skipped_emails = 0
-        failed_emails = 0
-        total_attachments_inserted = 0
-        new_emails_inserted = 0
+            skipped_emails = 0
+            failed_emails = 0
+            total_attachments_inserted = 0
+            new_emails_inserted = 0
 
-        for uid, raw_email in zip(email_uids, raw_emails):
-            if not raw_email:
-                logging.warning(f"Failed to fetch email with UID {uid.decode() if isinstance(uid, bytes) else uid} for account {account_id}.")
-                failed_emails += 1
-                continue
-
-            email_message = email.message_from_bytes(raw_email)
-
-            subject = decode_header(email_message["Subject"])
-            sender = decode_header(email_message["From"])
-            recipients = decode_header(email_message["To"])
-            date = email_message["Date"]
-            message_id = email_message["Message-ID"]
-
-            # Generate email fingerprint
-            fingerprint_data = f"{subject}|{sender}|{recipients}|{date}|{message_id}"
-            fingerprint = hashlib.sha256(fingerprint_data.encode()).hexdigest()
-
-            # Check if the email already exists in the database using the fingerprint
-            cursor.execute("SELECT id FROM emails WHERE fingerprint = ?", (fingerprint,))
-            existing_email = cursor.fetchone()
-            if existing_email:
-                logging.debug(f"Skipping email with UID {uid.decode() if isinstance(uid, bytes) else uid} for account {account_id} as it already exists.")
-                skipped_emails += 1
-                continue
-
-            body = extract_body(email_message)
-            parsed_date = parse_date(date)
-
-            # Insert the email into the database
-            cursor.execute(
-                """INSERT INTO emails (account_id, subject, sender, recipients, date, body, fingerprint)
-                              VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                (account_id, subject, sender, recipients, parsed_date, body, fingerprint),
-            )
-            email_id = cursor.lastrowid
-            new_emails_inserted += 1
-
-            attachments_inserted = 0
-            for part in email_message.walk():
-                if part.get_content_maintype() == "multipart" or part.get("Content-Disposition") is None:
+            for uid, raw_email in zip(email_uids, raw_emails):
+                if not raw_email:
+                    logging.warning(f"Failed to fetch email with UID {uid.decode() if isinstance(uid, bytes) else uid} for account {account_id}.")
+                    failed_emails += 1
                     continue
 
-                filename = decode_filename(part.get_filename())
-                if filename:
-                    content = part.get_payload(decode=True)
-                    cursor.execute(
-                        """INSERT INTO attachments (email_id, filename, content)
-                                      VALUES (?, ?, ?)""",
-                        (email_id, filename, content),
-                    )
-                    attachments_inserted += 1
+                email_message = email.message_from_bytes(raw_email)
 
-            conn.commit()
-            logging.info(f"Inserted email with UID {uid.decode() if isinstance(uid, bytes) else uid} for account {account_id} into the database.")
+                subject = decode_header(email_message["Subject"])
+                sender = decode_header(email_message["From"])
+                recipients = decode_header(email_message["To"])
+                date = email_message["Date"]
+                message_id = email_message["Message-ID"]
 
-            if attachments_inserted > 0:
-                logging.info(f"Saved {attachments_inserted} attachment(s) for email with UID {uid.decode() if isinstance(uid, bytes) else uid} and account {account_id}.")
-                total_attachments_inserted += attachments_inserted
+                fingerprint_data = f"{subject}|{sender}|{recipients}|{date}|{message_id}"
+                fingerprint = hashlib.sha256(fingerprint_data.encode()).hexdigest()
 
-        if protocol == "imap" and uidnext:
-            cursor.execute("INSERT OR REPLACE INTO email_uids (account_id, uid) VALUES (?, ?)", (account_id, uidnext))
+                cursor.execute("SELECT id FROM emails WHERE fingerprint = ?", (fingerprint,))
+                existing_email = cursor.fetchone()
+                if existing_email:
+                    logging.debug(f"Skipping email with UID {uid.decode() if isinstance(uid, bytes) else uid} for account {account_id} as it already exists.")
+                    skipped_emails += 1
+                    continue
 
-        if protocol == "imap":
-            client.close()
-            client.logout()
-        elif protocol == "pop3":
-            client.quit()
+                body = extract_body(email_message)
+                parsed_date = parse_date(date)
+
+                cursor.execute(
+                    """INSERT INTO emails (account_id, subject, sender, recipients, date, body, fingerprint)
+                                  VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                    (account_id, subject, sender, recipients, parsed_date, body, fingerprint),
+                )
+                email_id = cursor.lastrowid
+                new_emails_inserted += 1
+
+                attachments_inserted = 0
+                for part in email_message.walk():
+                    if part.get_content_maintype() == "multipart" or part.get("Content-Disposition") is None:
+                        continue
+
+                    filename = decode_filename(part.get_filename())
+                    if filename:
+                        content = part.get_payload(decode=True)
+                        cursor.execute(
+                            """INSERT INTO attachments (email_id, filename, content)
+                                          VALUES (?, ?, ?)""",
+                            (email_id, filename, content),
+                        )
+                        attachments_inserted += 1
+
+                conn.commit()
+                logging.info(f"Inserted email with UID {uid.decode() if isinstance(uid, bytes) else uid} for account {account_id} into the database.")
+
+                if attachments_inserted > 0:
+                    logging.info(f"Saved {attachments_inserted} attachment(s) for email with UID {uid.decode() if isinstance(uid, bytes) else uid} and account {account_id}.")
+                    total_attachments_inserted += attachments_inserted
 
         end_time = time.time()
         elapsed_time = end_time - start_time
@@ -330,47 +401,29 @@ def decode_filename(filename):
     return "".join(decoded_parts)
 
 
-def create_account(conn, email, password, protocol, server, port, interval=300):
+def create_account(conn, email, password, protocol, server, port, interval=300, selected_inboxes=None):
     logging.info(f"Creating {protocol.upper()} account for {email}.")
     mailbox = "INBOX" if protocol == "imap" else None
 
-    try:
-        if protocol == "imap":
-            client = imaplib.IMAP4_SSL(server, int(port))
-            client._mode_utf8()
-            client.login(email, password)
-            client.logout()
-        elif protocol == "pop3":
-            client = poplib.POP3_SSL(server, int(port))
-            client.user(email)
-            client.pass_(password)
-            client.quit()
+    # Ensure that the selected_inboxes list has no leading/trailing whitespaces
+    if selected_inboxes:
+        selected_inboxes = [inbox.strip() for inbox in selected_inboxes]
 
-        # Encrypt the password
+
+    try:
         encrypted_password = cipher_suite.encrypt(password.encode())
 
         cursor = conn.cursor()
         cursor.execute(
-        """INSERT INTO accounts (email, password, protocol, server, port, mailbox, interval)
-                      VALUES (?, ?, ?, ?, ?, ?, ?)""",
-        (email, encrypted_password, protocol, server, int(port), mailbox, interval),
+            """INSERT INTO accounts (email, password, protocol, server, port, mailbox, selected_inboxes, interval)
+                          VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (email, encrypted_password, protocol, server, int(port), mailbox, ",".join(selected_inboxes) if selected_inboxes else None, interval),
         )
         account_id = cursor.lastrowid
         conn.commit()
         logging.info(f"{protocol.upper()} account created successfully for {email}.")
 
-        # Run email archiving for the newly created account TODO: adjust this as it creates duplicate records on application start
-        # run_archiver_once(account_id)
-
         return account_id
-    except (imaplib.IMAP4.error, poplib.error_proto) as e:
-        logging.error(
-            f"Failed to create {protocol.upper()} account for {email}. Error: {str(e)}"
-        )
-        print(
-            f"Failed to create {protocol.upper()} account. Please check the {protocol.upper()} server and port manually."
-        )
-        return None
     except sqlite3.IntegrityError:
         logging.warning(
             f"{protocol.upper()} account with email {email} already exists in the database."
@@ -389,6 +442,20 @@ def read_accounts(conn):
     logging.info(f"Retrieved {len(accounts)} IMAP/POP3 accounts from the database.")
     return accounts
 
+def get_available_inboxes(email, password, protocol, server, port):
+    if protocol.lower() == "imap":
+        try:
+            client = imaplib.IMAP4_SSL(server, int(port))
+            client._mode_utf8()
+            client.login(email, password)
+            _, mailboxes = client.list()
+            available_inboxes = [mailbox.decode().split('"')[-1] for mailbox in mailboxes]
+            client.logout()
+            return available_inboxes
+        except (imaplib.IMAP4.error, imaplib.IMAP4.abort) as e:
+            raise e
+    else:
+        return []
 
 def get_account(conn, account_id):
     logging.info(f"Fetching account details for account ID {account_id}.")
@@ -659,7 +726,7 @@ def run_archiver():
                 continue
             
             for account in accounts:
-                account_id, email, encrypted_password, protocol, server, port, mailbox, interval = account
+                account_id, email, encrypted_password, protocol, server, port, mailbox, available_inboxes, selected_inboxes, interval = account
                 fetch_and_archive_emails(
                     conn,
                     account_id,
@@ -668,7 +735,7 @@ def run_archiver():
                     port,
                     email,
                     encrypted_password,
-                    mailbox,
+                    selected_inboxes if selected_inboxes else available_inboxes,
                 )
                 logging.info(f"Email archiving completed for account {account_id}. Waiting for {interval} seconds before processing the next account.")
                 time.sleep(interval)  # Wait for the specified interval before processing the next account

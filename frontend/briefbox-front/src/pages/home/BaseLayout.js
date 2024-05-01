@@ -18,7 +18,7 @@ import { motion } from "framer-motion";
 const BaseLayout = ({ children, pageTitle, pageSubtitle }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
 
   const toggleDrawer = () => {
     setIsOpen(!isOpen);
