@@ -62,7 +62,7 @@ const ArchivePage = () => {
 
   const fetchEmails = async () => {
     try {
-      const response = await axios.get("http://localhost:5050/emails", {
+      const response = await axios.get("http://localhost:5050/emails/emails", {
         params: {
           page: page + 1,
           per_page: rowsPerPage,
@@ -176,7 +176,7 @@ const ArchivePage = () => {
             onClick={async () => {
               try {
                 await axios.delete(
-                  `http://localhost:5050/delete_email/${emailToDelete}`
+                  `http://localhost:5050/emails/emails/delete_email/${emailToDelete}`
                 );
                 console.log("Email deleted successfully");
                 setDeleteConfirmationOpen(false);

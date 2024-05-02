@@ -7,3 +7,4 @@ __pycache__
 tests
 frontend/briefbox-front/src/pages/dump_files.py
 frontend/briefbox-front/src/pages/output.txt
+backend/data/email_archive.db-journal

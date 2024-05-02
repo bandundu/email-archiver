@@ -18,15 +18,8 @@ from dotenv import load_dotenv
 from jwt import InvalidTokenError
 import hashlib
 import time
+from encryption import cipher_suite
 
-
-# Load environment variables from .env file
-load_dotenv()
-
-# Load the secret key from the environment variable
-secret_key = os.environ.get("SECRET_KEY").encode()
-# In email_archiver.py
-cipher_suite = Fernet(secret_key)
 
 # Configure logging
 logging.basicConfig(

@@ -164,7 +164,7 @@ function RegisterPage() {
 
     try {
       const response = await axios.post(
-        "http://localhost:5050/register",
+        "http://localhost:5050/auth/register",
         userData,
         { timeout: 5050 }
       );

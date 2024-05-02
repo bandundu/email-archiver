@@ -79,7 +79,7 @@ const EmailDetailsPage = () => {
         setAttachments([]); // Clear attachments for cached email
       } else {
         const response = await axios.get(
-          `http://localhost:5050/email_details/${emailId}`
+          `http://localhost:5050/emails/email_details/${emailId}`
         );
         setEmail(response.data.email);
         setAttachments(response.data.attachments);
@@ -90,7 +90,7 @@ const EmailDetailsPage = () => {
       }
 
       const totalEmailsResponse = await axios.get(
-        "http://localhost:5050/emails",
+        "http://localhost:5050/emails/emails",
         {
           params: {
             page: 1,
@@ -107,7 +107,7 @@ const EmailDetailsPage = () => {
 
       if (prevEmailId >= 1 && !emailCache[prevEmailId]) {
         const prevEmailResponse = await axios.get(
-          `http://localhost:5050/email_details/${prevEmailId}`
+          `http://localhost:5050/emails/email_details/${prevEmailId}`
         );
         setEmailCache((prevCache) => ({
           ...prevCache,
@@ -117,7 +117,7 @@ const EmailDetailsPage = () => {
 
       if (nextEmailId <= totalEmails && !emailCache[nextEmailId]) {
         const nextEmailResponse = await axios.get(
-          `http://localhost:5050/email_details/${nextEmailId}`
+          `http://localhost:5050/emails/email_details/${nextEmailId}`
         );
         setEmailCache((prevCache) => ({
           ...prevCache,

@@ -45,7 +45,7 @@ const AccountsPage = () => {
 
   const fetchAccounts = async () => {
     try {
-      const response = await axios.get("http://localhost:5050/get_accounts");
+      const response = await axios.get("http://localhost:5050/accounts/get_accounts");
       const updatedAccounts = response.data.map((account) => ({
         ...account,
         protocol: account.protocol.toUpperCase(),
@@ -62,7 +62,7 @@ const AccountsPage = () => {
       if (newAccount.protocol === "imap") {
         // Fetch available inboxes for IMAP accounts
         const inboxResponse = await axios.post(
-          "http://localhost:5050/get_available_inboxes",
+          "http://localhost:5050/accounts/get_available_inboxes",
           {
             email: newAccount.email,
             password: newAccount.password,
@@ -85,7 +85,7 @@ const AccountsPage = () => {
       } else {
         // Create POP3 account without inbox selection
         const response = await axios.post(
-          "http://localhost:5050/create_account",
+          "http://localhost:5050/accounts/create_account",
           newAccount
         );
         if (response.status === 200) {
@@ -114,7 +114,7 @@ const AccountsPage = () => {
         ...newAccount,
         ...(newAccount.protocol === "imap" && { selected_inboxes: newAccount.selectedInboxes }),
       };
-      const response = await axios.post("http://localhost:5050/create_account", requestData);
+      const response = await axios.post("http://localhost:5050/accounts/create_account", requestData);
       if (response.status === 200) {
         setAccounts([...accounts, response.data]);
         setNewAccount({
@@ -143,7 +143,7 @@ const AccountsPage = () => {
   const handleUpdateAccount = async () => {
     try {
       const response = await axios.post(
-        `http://localhost:5050/update_account/${editAccountId}`,
+        `http://localhost:5050/accounts/update_account/${editAccountId}`,
         { ...newAccount, interval: newAccount.interval } // Include the interval field
       );
       if (response.status === 200) {
@@ -169,7 +169,7 @@ const AccountsPage = () => {
   const handleDeleteAccount = async (accountId) => {
     try {
       const response = await axios.post(
-        `http://localhost:5050/delete_account/${accountId}`
+        `http://localhost:5050/accounts/delete_account/${accountId}`
       );
       if (response.status === 200) {
         const updatedAccounts = accounts.filter((acc) => acc.id !== accountId);

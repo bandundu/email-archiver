@@ -58,7 +58,7 @@ function EmailConfirmationPage() {
   const confirmEmail = async (data) => {
     try {
       const response = await axios.post(
-        "http://localhost:5050/confirm-email",
+        "http://localhost:5050/auth/confirm-email",
         data
       );
       if (response.data.success) {

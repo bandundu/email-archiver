@@ -29,7 +29,7 @@ const SettingsPage = () => {
   useEffect(() => {
     const fetchSecretKey = async () => {
       try {
-        const response = await fetch("http://localhost:5050/fernet_key");
+        const response = await fetch("http://localhost:5050/utilities/fernet_key");
         if (response.ok) {
           const data = await response.json();
           setSecretKey(data.fernet_key);
@@ -237,7 +237,7 @@ const SettingsPage = () => {
                 }}
               />
               <Typography variant="body2" sx={{ marginTop: "10px", color: "grey" }}>
-                Keep this secret key secure. It is used for encryption and decryption of your data.
+                Keep this secret key secure. It is used for encryption and decryption of your mail pasasword data.
               </Typography>
             </AccordionDetails>
           </Accordion>
