@@ -4,6 +4,7 @@ import email_archiver as email_archiver
 import imaplib
 import poplib
 import sqlite3
+from queue_manager import task_queue, ACCOUNT_CREATION
 
 router = APIRouter()
 
@@ -38,15 +39,18 @@ def create_account(account_data: AccountData):
     if not all([email, password, protocol.lower(), server, port]):
         return {"error": "Missing required fields"}
 
-    conn = sqlite3.connect("data/email_archive.db")
-    try:
-        email_archiver.create_account(conn, email, password, protocol, server, port, interval, selected_inboxes)
-        conn.close()
-        return {"message": "Account created successfully"}
-    except sqlite3.IntegrityError:
-        conn.close()
-        error_message = f"An account with email '{email}' already exists. Please use a different email."
-        return {"error": error_message}
+    task_queue.put({
+        'type': ACCOUNT_CREATION,
+        'email': email,
+        'password': password,
+        'protocol': protocol,
+        'server': server,
+        'port': port,
+        'interval': interval,
+        'selected_inboxes': selected_inboxes
+    })
+
+    return {"message": "Account creation queued successfully"}
     
 @router.get("/get_accounts")
 def get_accounts():

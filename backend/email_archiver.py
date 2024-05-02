@@ -26,6 +26,17 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
+def get_database_connection():
+    if not os.path.exists("data"):
+        os.makedirs("data")
+
+    try:
+        initialize_database()
+        conn = sqlite3.connect("data/email_archive.db")
+        return conn
+    except InvalidToken:
+        print("Error: The provided Fernet key is incompatible with the existing database.")
+        exit(1)
 
 def initialize_database():
     db_exists = os.path.exists("data/email_archive.db")
@@ -739,97 +750,3 @@ def run_archiver():
             logging.error(f"An error occurred during email archiving: {str(e)}")
             logging.error(f"Exception details: {traceback.format_exc()}")
             time.sleep(300)  # Wait for 5 minutes before retrying in case of an error
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Email Archiver CLI")
-    subparsers = parser.add_subparsers(dest="command", help="Available commands")
-
-    # IMAP/POP3 Account Management
-    parser_create_account = subparsers.add_parser(
-        "create_account", help="Create a new IMAP/POP3 account"
-    )
-    parser_create_account.add_argument("email", help="Email address")
-    parser_create_account.add_argument("password", help="Email password")
-    parser_create_account.add_argument(
-        "--protocol",
-        choices=["imap", "pop3"],
-        help="Email protocol (imap or pop3)",
-        default=DEFAULT_PROTOCOL,
-    )
-
-    parser_list_accounts = subparsers.add_parser(
-        "list_accounts", help="List all IMAP/POP3 accounts"
-    )
-
-    parser_update_account = subparsers.add_parser(
-        "update_account", help="Update an IMAP/POP3 account"
-    )
-    parser_update_account.add_argument("account_id", type=int, help="Account ID")
-    parser_update_account.add_argument("email", help="Email address")
-    parser_update_account.add_argument("password", help="Email password")
-    parser_update_account.add_argument(
-        "protocol", choices=["imap", "pop3"], help="Email protocol (imap or pop3)"
-    )
-    parser_update_account.add_argument("server", help="Email server")
-    parser_update_account.add_argument("port", type=int, help="Email server port")
-    parser_update_account.add_argument("mailbox", help="Mailbox to archive (IMAP only)")
-
-    parser_delete_account = subparsers.add_parser(
-        "delete_account", help="Delete an IMAP/POP3 account"
-    )
-    parser_delete_account.add_argument("account_id", type=int, help="Account ID")
-
-    # Email Archive
-    parser_search_emails = subparsers.add_parser(
-        "search_emails", help="Search for emails"
-    )
-    parser_search_emails.add_argument("query", help="Search query")
-
-    parser_get_email = subparsers.add_parser("get_email", help="Get email details")
-    parser_get_email.add_argument("email_id", type=int, help="Email ID")
-
-    # Archiver
-    parser_run_archiver = subparsers.add_parser(
-        "run_archiver", help="Run the email archiver"
-    )
-
-    args = parser.parse_args()
-
-    logging.info(f"Executing command: {args.command}")
-
-    if args.command == "create_account":
-        create_account(args.email, args.password, args.protocol)
-    elif args.command == "list_accounts":
-        accounts = read_accounts()
-        for account in accounts:
-            print(account)
-    elif args.command == "update_account":
-        update_account(
-            args.account_id,
-            args.email,
-            args.password,
-            args.protocol,
-            args.server,
-            args.port,
-            args.mailbox,
-        )
-    elif args.command == "delete_account":
-        delete_account(args.account_id)
-    elif args.command == "search_emails":
-        emails = search_emails(args.query)
-        for email in emails:
-            print(email)
-    elif args.command == "get_email":
-        email, attachments = get_email_details(args.email_id)
-        if email:
-            print(email)
-            print("Attachments:")
-            for attachment in attachments:
-                print(attachment)
-        else:
-            print(f"Email with ID {args.email_id} not found.")
-    elif args.command == "run_archiver":
-        run_archiver()
-
-    logging.info(f"Command {args.command} executed successfully.")
