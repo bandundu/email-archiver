@@ -152,6 +152,7 @@ const EmailDetailsPage = () => {
         <pre
           ref={emailContentRef}
           style={{ ...emailContentStyle, whiteSpace: "pre-wrap" }}
+          contentEditable="false" // Add this line
         >
           {body}
         </pre>
@@ -162,6 +163,7 @@ const EmailDetailsPage = () => {
           ref={emailContentRef}
           dangerouslySetInnerHTML={{ __html: body }}
           style={emailContentStyle}
+          contentEditable="false" // Add this line
         />
       );
     }

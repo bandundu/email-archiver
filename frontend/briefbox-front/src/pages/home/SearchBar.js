@@ -114,7 +114,7 @@ function SearchBar() {
     const fetchSearchResults = async () => {
       if (searchTerm.trim() !== "") {
         try {
-          const response = await axios.post("http://localhost:5050/search_emails", {
+          const response = await axios.post("http://localhost:5050/emails/search_emails", {
             query: searchTerm,
           });
 
