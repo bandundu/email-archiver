@@ -14,12 +14,15 @@ from api.utilities import router as utilities_router
 
 app = FastAPI()
 
+# Include routers for different API endpoints
 app.include_router(accounts_router, prefix="/accounts")
 app.include_router(attachments_router, prefix="/attachments")
 app.include_router(emails_router, prefix="/emails")
 app.include_router(exports_router, prefix="/exports")
 app.include_router(utilities_router, prefix="/utilities")
 
+
+# Set up CORS middleware to allow requests from any origin
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -29,14 +32,18 @@ app.add_middleware(
 )
 
 if __name__ == "__main__":
+
+    # Create the 'data' directory if it doesn't exist
     if not os.path.exists("data"):
         os.makedirs("data")
 
     try:
+        # Initialize the database
         initialize_database()
     except InvalidToken:
         print("Error: The provided Fernet key is incompatible with the existing database.")
         exit(1)
 
+    # Start the FastAPI application using Uvicorn
     import uvicorn
     uvicorn.run(app, host="localhost", port=5050)

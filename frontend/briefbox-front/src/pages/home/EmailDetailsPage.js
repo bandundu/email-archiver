@@ -284,7 +284,6 @@ const EmailDetailsPage = () => {
                     >
                       Date: {email.date}
                     </Typography>
-                    {renderEmailContent()}
                     {attachments.length > 0 && (
                       <>
                         <Typography
@@ -309,6 +308,7 @@ const EmailDetailsPage = () => {
                         </ul>
                       </>
                     )}
+                    {renderEmailContent()}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -421,7 +421,6 @@ const EmailDetailsPage = () => {
                   >
                     Date: {email.date}
                   </Typography>
-                  {renderEmailContent()}
                   {attachments.length > 0 && (
                     <>
                       <Typography
@@ -446,6 +445,7 @@ const EmailDetailsPage = () => {
                       </ul>
                     </>
                   )}
+                  {renderEmailContent()}
                 </motion.div>
               )}
             </AnimatePresence>

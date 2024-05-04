@@ -30,7 +30,7 @@ const AccountsPage = () => {
     protocol: "imap",
     server: "",
     port: "",
-    interval: 300,
+    interval: 60,
     selectedInboxes: [],
   });
   const [availableInboxes, setAvailableInboxes] = useState([]);
@@ -72,6 +72,7 @@ const AccountsPage = () => {
           }
         );
         const availableInboxes = inboxResponse.data.available_inboxes;
+        
         setAvailableInboxes(availableInboxes);
   
         // Set selectedInboxes to include all available inboxes by default
@@ -96,7 +97,7 @@ const AccountsPage = () => {
             protocol: "imap",
             server: "",
             port: "",
-            interval: 300,
+            interval: 60,
             selectedInboxes: [],
           });
           setShowAddAccountForm(false);
@@ -123,7 +124,7 @@ const AccountsPage = () => {
           protocol: "imap",
           server: "",
           port: "",
-          interval: 300,
+          interval: 60,
           selectedInboxes: [],
         });
         setShowConfirmationDialog(false);
@@ -158,7 +159,7 @@ const AccountsPage = () => {
           protocol: "pop3",
           server: "",
           port: "",
-          interval: 300, // Reset the interval to the default value
+          interval: 60, // Reset the interval to the default value
         });
       }
     } catch (error) {
@@ -168,7 +169,7 @@ const AccountsPage = () => {
 
   const handleDeleteAccount = async (accountId) => {
     try {
-      const response = await axios.post(
+      const response = await axios.delete(
         `http://localhost:5050/accounts/delete_account/${accountId}`
       );
       if (response.status === 200) {

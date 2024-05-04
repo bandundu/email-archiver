@@ -21,6 +21,10 @@ def get_available_inboxes(account_data: AccountData):
 
     try:
         available_inboxes = email_archiver.get_available_inboxes(email, password, protocol, server, port)
+        
+        # Clean available inboxes for empty strings
+        available_inboxes = [inbox for inbox in available_inboxes if inbox]
+
         return {"available_inboxes": available_inboxes}
     except (imaplib.IMAP4.error, poplib.error_proto) as e:
         error_message = f"Failed to connect to the {protocol.upper()} server. Please check the server details."
@@ -96,11 +100,10 @@ def update_account(account_id: int, account_data: AccountData):
 
     return {"message": "Account updated successfully"}
 
-@router.delete("/delete_account/{account_id}")
+@router.delete("/delete_account/{account_id}", status_code=200)
 def delete_account(account_id: int):
     conn = sqlite3.connect("data/email_archive.db")
     email_archiver.delete_account(conn, account_id)
     conn.close()
-
     return {"message": "Account deleted successfully"}
 
