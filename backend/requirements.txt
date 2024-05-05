@@ -5,3 +5,4 @@ cryptography
 python-dateutil
 python-dotenv
 PyJWT
+cachetools

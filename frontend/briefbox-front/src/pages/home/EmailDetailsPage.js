@@ -14,6 +14,8 @@ import BaseLayout from "./BaseLayout";
 import CloseIcon from "@mui/icons-material/Close";
 import axios from "axios";
 import { CircularProgress } from "@mui/material";
+import SearchBar from "./SearchBar";
+
 
 const EmailDetailsPage = () => {
   const { emailId } = useParams();
@@ -257,7 +259,7 @@ const EmailDetailsPage = () => {
 
   if (!email) {
     return (
-      <BaseLayout>
+      <BaseLayout showSearchBar={false}>
         <Box
           sx={{
             display: "flex",
@@ -273,7 +275,7 @@ const EmailDetailsPage = () => {
   }
 
   return (
-    <BaseLayout>
+    <BaseLayout showSearchBar={false}>
       {isMobile ? (
         <Drawer
           anchor="bottom"
@@ -458,12 +460,15 @@ const EmailDetailsPage = () => {
                   }
                   style={{ position: "absolute", width: "100%" }} // Add this line to position the emails absolutely
                 >
-                  <Typography
-                    variant="h5"
-                    sx={{ color: "white", marginBottom: "10px" }}
-                  >
-                    {email.subject}
-                  </Typography>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                    <Typography
+                      variant="h5"
+                      sx={{ color: "white" }}
+                    >
+                      {email.subject}
+                    </Typography>
+                    <SearchBar />
+                  </Box>
                   <Typography
                     variant="body1"
                     sx={{ color: "white", marginBottom: "10px" }}

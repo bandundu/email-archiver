@@ -59,10 +59,27 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 
 const SearchCard = ({ searchTerm, setSearchTerm, searchResults, onClose, navigate }) => {
   const searchInputRef = useRef(null);
+  const [searchTime, setSearchTime] = useState(0);
+  const [showNoResults, setShowNoResults] = useState(false); // Add this state variable
+
+  const cardVariants = {
+    hidden: { opacity: 0, y: -50 },
+    visible: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: 50 },
+  };
 
   useEffect(() => {
     searchInputRef.current.focus();
   }, []);
+
+  useEffect(() => {
+    if (searchTerm.trim() !== "") {
+      setShowNoResults(searchResults.length === 0);
+    } else {
+      setShowNoResults(false);
+    }
+  }, [searchTerm, searchResults]); // Add searchTerm and searchResults as dependencies
+
 
   const handleResultClick = (emailId, navigate, onClose) => {
     console.log(`Clicked on search result with email ID: ${emailId}`);
@@ -75,6 +92,8 @@ const SearchCard = ({ searchTerm, setSearchTerm, searchResults, onClose, navigat
       onClose();
     }
   };
+
+
 
   const resultVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -105,6 +124,7 @@ const SearchCard = ({ searchTerm, setSearchTerm, searchResults, onClose, navigat
         boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.5)",
         display: "flex",
         flexDirection: "column",
+        borderRadius: "12px", // Increased border radius
       }}
       onKeyDown={handleKeyDown}
     >
@@ -119,7 +139,7 @@ const SearchCard = ({ searchTerm, setSearchTerm, searchResults, onClose, navigat
         <Search
           sx={{
             width: "100%",
-            maxWidth: "600px", // Set a maximum width for the search bar
+            maxWidth: "600px",
             display: "flex",
           }}
         >
@@ -149,37 +169,48 @@ const SearchCard = ({ searchTerm, setSearchTerm, searchResults, onClose, navigat
         </Search>
       </Box>
       <CardContent>
-        <AnimatePresence>
-          {searchResults.map((result, index) => (
-            <motion.div
-              key={result.id}
-              variants={resultVariants}
-              initial="hidden"
-              animate="visible"
-              custom={index}
-              exit="hidden"
-            >
-              <Box
-                sx={{
-                  cursor: "pointer",
-                  padding: "12px",
-                  borderBottom: "1px solid #444444",
-                  "&:hover": {
-                    backgroundColor: "#444444",
-                  },
-                }}
-                onClick={() => handleResultClick(result.id, navigate, onClose)}
-              >
-                <Typography variant="subtitle1" sx={{ color: "white" }}>
-                  {result.subject}
-                </Typography>
-                <Typography variant="body2" sx={{ color: "#bbbbbb" }}>
-                  {result.sender}
-                </Typography>
-              </Box>
-            </motion.div>
-          ))}
-        </AnimatePresence>
+        {searchResults.length > 0 ? (
+          <>
+            <Typography variant="body2" sx={{ color: "#bbbbbb", marginBottom: "12px" }}>
+              {searchResults.length} matches found
+            </Typography>
+            <AnimatePresence>
+              {searchResults.map((result, index) => (
+                <motion.div
+                  key={result.id}
+                  variants={resultVariants}
+                  initial="hidden"
+                  animate="visible"
+                  custom={index}
+                  exit="hidden"
+                >
+                  <Box
+                    sx={{
+                      cursor: "pointer",
+                      padding: "12px",
+                      borderBottom: "1px solid #444444",
+                      "&:hover": {
+                        backgroundColor: "#444444",
+                      },
+                    }}
+                    onClick={() => handleResultClick(result.id, navigate, onClose)}
+                  >
+                    <Typography variant="subtitle1" sx={{ color: "white" }}>
+                      {result.subject}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "#bbbbbb" }}>
+                      {result.sender}
+                    </Typography>
+                  </Box>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </>
+        ) : searchTerm.trim() !== "" && searchResults.length === 0 ? (
+          <Typography variant="body1" sx={{ color: "white", textAlign: "center" }}>
+            No results found for "{searchTerm}"
+          </Typography>
+        ) : null}
       </CardContent>
     </Card>
   );
@@ -196,12 +227,14 @@ function SearchPage() {
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchCard, setShowSearchCard] = useState(false);
   const [showSearchBar, setShowSearchBar] = useState(true);
+  const [searchTime, setSearchTime] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchSearchResults = async () => {
       if (searchTerm.trim() !== "") {
         try {
+          const startTime = performance.now();
           const response = await axios.post(
             "http://localhost:5050/emails/search_emails",
             {
@@ -209,7 +242,10 @@ function SearchPage() {
             }
           );
 
-          // Validate the response data
+          const endTime = performance.now();
+          const searchDuration = (endTime - startTime) / 1000;
+          setSearchTime(searchDuration);
+
           if (response.data && Array.isArray(response.data.emails)) {
             setSearchResults(response.data.emails);
             setShowSearchCard(true);
@@ -231,7 +267,7 @@ function SearchPage() {
 
     const debounceTimer = setTimeout(() => {
       fetchSearchResults();
-    }, 300);
+    }, 250);
 
     return () => {
       clearTimeout(debounceTimer);
@@ -242,7 +278,9 @@ function SearchPage() {
     console.log("Closing search results popup");
     setSearchTerm("");
     setShowSearchCard(false);
-    setShowSearchBar(true);
+    setTimeout(() => {
+      setShowSearchBar(true);
+    }, 300);
   };
 
   return (
@@ -252,7 +290,7 @@ function SearchPage() {
           zIndex: 999,
           backgroundColor: "rgba(0, 0, 0, 0.5)",
           backdropFilter: "blur(4px)",
-          position: "fixed", // Added to prevent background movement
+          position: "fixed",
           top: 0,
           left: 0,
           right: 0,
@@ -262,10 +300,12 @@ function SearchPage() {
         onClick={handleClose}
       />
       {showSearchBar && (
-        <Search onClick={() => {
-          setShowSearchCard(true);
-          setShowSearchBar(false);
-        }}>
+        <Search
+          onClick={() => {
+            setShowSearchCard(true);
+            setShowSearchBar(false);
+          }}
+        >
           <SearchIconWrapper>
             <SearchIcon />
           </SearchIconWrapper>
@@ -284,10 +324,12 @@ function SearchPage() {
           searchResults={searchResults}
           onClose={handleClose}
           navigate={navigate}
+          searchTime={searchTime} // Pass searchTime as a prop
         />
       )}
     </Box>
   );
 }
+
 
 export default SearchPage;

@@ -19,7 +19,10 @@ from jwt import InvalidTokenError
 import hashlib
 import time
 from encryption import cipher_suite
+import cachetools
 
+# Create a cache with a maximum size of 1000 and a TTL of 5 minutes
+search_cache = cachetools.TTLCache(maxsize=1000, ttl=300)
 
 # Configure logging
 logging.basicConfig(
@@ -83,7 +86,7 @@ def initialize_database():
                    email_id INTEGER,
                    filename TEXT,
                    content BLOB,
-                   cid TEXT,  -- Add this line
+                   cid TEXT,
                    FOREIGN KEY (email_id) REFERENCES emails (id))"""
         )
 
@@ -93,6 +96,40 @@ def initialize_database():
                            account_id INTEGER,
                            uid TEXT,
                            FOREIGN KEY (account_id) REFERENCES accounts (id))"""
+        )
+
+        # Create FTS virtual table
+        cursor.execute(
+            """CREATE VIRTUAL TABLE IF NOT EXISTS emails_fts USING fts5(
+                subject,
+                sender,
+                recipients,
+                body,
+                content=emails,
+                content_rowid=id
+            )"""
+        )
+
+        # Create trigger to keep the FTS index up to date
+        cursor.execute(
+            """CREATE TRIGGER IF NOT EXISTS emails_ai AFTER INSERT ON emails BEGIN
+                INSERT INTO emails_fts(rowid, subject, sender, recipients, body)
+                VALUES (new.id, new.subject, new.sender, new.recipients, new.body);
+            END"""
+        )
+        cursor.execute(
+            """CREATE TRIGGER IF NOT EXISTS emails_ad AFTER DELETE ON emails BEGIN
+                INSERT INTO emails_fts(emails_fts, rowid, subject, sender, recipients, body)
+                VALUES('delete', old.id, old.subject, old.sender, old.recipients, old.body);
+            END"""
+        )
+        cursor.execute(
+            """CREATE TRIGGER IF NOT EXISTS emails_au AFTER UPDATE ON emails BEGIN
+                INSERT INTO emails_fts(emails_fts, rowid, subject, sender, recipients, body)
+                VALUES('delete', old.id, old.subject, old.sender, old.recipients, old.body);
+                INSERT INTO emails_fts(rowid, subject, sender, recipients, body)
+                VALUES(new.id, new.subject, new.sender, new.recipients, new.body);
+            END"""
         )
 
         # Commit changes and close the connection
@@ -665,6 +702,16 @@ def export_search_results(conn, query):
 
 def search_emails(conn, query):
     logging.info(f"Searching for emails with query: {query}")
+
+    # Generate a cache key based on the query
+    cache_key = hashlib.sha256(query.encode()).hexdigest()
+
+    # Check if the search results are already cached
+    cached_results = search_cache.get(cache_key)
+    if cached_results is not None:
+        logging.info("Returning cached search results.")
+        return cached_results
+
     cursor = conn.cursor()
 
     # Remove leading/trailing whitespaces and convert to lowercase
@@ -690,49 +737,20 @@ def search_emails(conn, query):
             )
             emails = cursor.fetchall()
             logging.info(f"Found {len(emails)} emails within the date range.")
+            search_cache[cache_key] = emails  # Cache the search results
             return emails
         except (ValueError, TypeError):
-            logging.info("Invalid date range format. Proceeding with normal search.")
-    else:
-        # Check if the query is a valid date string
-        try:
-            query_date = parser.parse(query, fuzzy=True)
-            date_query = query_date.strftime("%Y-%m-%d")
-        except (ValueError, TypeError):
-            date_query = None
+            logging.info("Invalid date range format. Proceeding with full-text search.")
 
-        if date_query:
-            # Search emails by date (case-insensitive)
-            cursor.execute(
-                "SELECT * FROM emails WHERE LOWER(date) LIKE ?", (f"%{date_query}%",)
-            )
-        else:
-            # Split the query into individual terms
-            query_terms = re.findall(r"\b\w+\b", query)
-
-            # Check if there are any valid search terms
-            if not query_terms:
-                logging.info("No valid search terms found. Returning no results.")
-                return []  # Return an empty list
-
-            # Build the SQL query dynamically based on the number of query terms
-            sql_query = "SELECT * FROM emails WHERE "
-            sql_conditions = []
-            sql_params = []
-
-            for term in query_terms:
-                sql_conditions.append(
-                    "(LOWER(subject) LIKE ? OR LOWER(sender) LIKE ? OR LOWER(recipients) LIKE ? OR LOWER(body) LIKE ?)"
-                )
-                sql_params.extend([f"%{term}%", f"%{term}%", f"%{term}%", f"%{term}%"])
-
-            sql_query += " OR ".join(sql_conditions)
-
-            # Execute the SQL query with the dynamic conditions and parameters
-            cursor.execute(sql_query, sql_params)
-
+    # Perform full-text search using the FTS index
+    cursor.execute(
+        "SELECT emails.* FROM emails_fts JOIN emails ON emails_fts.rowid = emails.id WHERE emails_fts MATCH ?",
+        (query,),
+    )
     emails = cursor.fetchall()
+
     logging.info(f"Found {len(emails)} emails matching the search query.")
+    search_cache[cache_key] = emails  # Cache the search results
     return emails
 
 
