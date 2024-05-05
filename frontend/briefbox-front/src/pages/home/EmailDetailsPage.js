@@ -145,14 +145,21 @@ const EmailDetailsPage = () => {
       overflowWrap: "break-word",
       wordWrap: "break-word",
       hyphens: "auto",
+      width: "100%", // Add this line to make the content take full width
+      maxWidth: "100%", // Add this line to prevent the content from exceeding the container width
+      boxSizing: "border-box", // Add this line to include padding and border in the width calculation
     };
 
     if (content_type === "text/plain") {
       return (
         <pre
           ref={emailContentRef}
-          style={{ ...emailContentStyle, whiteSpace: "pre-wrap" }}
-          contentEditable="false" // Add this line
+          style={{
+            ...emailContentStyle,
+            whiteSpace: "pre-wrap",
+            overflowX: "auto", // Add this line to enable horizontal scrolling if the content exceeds the container width
+          }}
+          contentEditable="false"
         >
           {body}
         </pre>
@@ -160,10 +167,15 @@ const EmailDetailsPage = () => {
     } else if (content_type === "text/html") {
       return (
         <div
-          ref={emailContentRef}
           dangerouslySetInnerHTML={{ __html: body }}
-          style={emailContentStyle}
-          contentEditable="false" // Add this line
+          style={{
+            width: "100%",
+            overflowX: "auto", // Add this line to enable horizontal scrolling if the content exceeds the container width
+            boxSizing: "border-box", // Include padding and border in the width calculation
+            padding: "20px", // Adjust the padding as needed
+            backgroundColor: "#fff", // Set a background color to isolate the content
+            //border: "1px solid #ccc", // Add a border to visually separate the content
+          }}
         />
       );
     }
@@ -367,6 +379,7 @@ const EmailDetailsPage = () => {
               flex: 1,
               padding: "20px",
               overflowY: "auto",
+              overflowX: "hidden", // Add this line to prevent horizontal scrolling
               position: "relative",
             }}
           >

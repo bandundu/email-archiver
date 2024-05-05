@@ -5,6 +5,7 @@ import imaplib
 import poplib
 import sqlite3
 from queue_manager import task_queue, ACCOUNT_CREATION, Task
+import queue
 
 router = APIRouter()
 
@@ -107,4 +108,3 @@ def delete_account(account_id: int):
     email_archiver.delete_account(conn, account_id)
     conn.close()
     return {"message": "Account deleted successfully"}
-
