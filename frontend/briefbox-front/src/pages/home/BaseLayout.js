@@ -18,7 +18,7 @@
   const BaseLayout = ({ children, pageTitle, pageSubtitle }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-    const [isOpen, setIsOpen] = useState(true);
+    const [isOpen, setIsOpen] = useState(false);
 
     const toggleDrawer = () => {
       setIsOpen(!isOpen);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   InputBase,
   styled,
@@ -8,10 +8,13 @@ import {
   Card,
   CardContent,
   Backdrop,
+  IconButton,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { motion, AnimatePresence } from "framer-motion";
+import CloseIcon from "@mui/icons-material/Close";
 
 const Search = styled("div")(({ theme }) => ({
   position: "relative",
@@ -54,11 +57,35 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
   },
 }));
 
-const SearchResultsPopup = ({ searchResults, onClose, navigate, searchTerm }) => {
-  const handleResultClick = (emailId) => {
+const SearchCard = ({ searchTerm, setSearchTerm, searchResults, onClose, navigate }) => {
+  const searchInputRef = useRef(null);
+
+  useEffect(() => {
+    searchInputRef.current.focus();
+  }, []);
+
+  const handleResultClick = (emailId, navigate, onClose) => {
     console.log(`Clicked on search result with email ID: ${emailId}`);
     onClose();
     navigateToEmailDetails(emailId, searchTerm, navigate);
+  };
+
+  const handleKeyDown = (event) => {
+    if (event.key === "Escape") {
+      onClose();
+    }
+  };
+
+  const resultVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: (index) => ({
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.3,
+        delay: index * 0.05,
+      },
+    }),
   };
 
   return (
@@ -69,37 +96,67 @@ const SearchResultsPopup = ({ searchResults, onClose, navigate, searchTerm }) =>
         left: "50%",
         transform: "translate(-50%, -50%)",
         zIndex: 1000,
-        maxHeight: "400px",
+        maxHeight: "600px",
         overflowY: "auto",
         backgroundColor: "#333333",
         color: "white",
         width: "80%",
         maxWidth: "600px",
         boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.5)",
+        display: "flex",
+        flexDirection: "column",
       }}
+      onKeyDown={handleKeyDown}
     >
+      <Box sx={{ padding: "20px", display: "flex", alignItems: "center" }}>
+        <Search>
+          <SearchIconWrapper>
+            <SearchIcon />
+          </SearchIconWrapper>
+          <StyledInputBase
+            placeholder={"What are you 👀 for?"}
+            inputProps={{ "aria-label": "search" }}
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            inputRef={searchInputRef}
+          />
+        </Search>
+        <IconButton onClick={onClose} sx={{ marginLeft: "auto" }}>
+          <CloseIcon sx={{ color: "white" }} />
+        </IconButton>
+      </Box>
       <CardContent>
-        {searchResults.map((result) => (
-          <Box
-            key={result.id}
-            sx={{
-              cursor: "pointer",
-              padding: "12px",
-              borderBottom: "1px solid #444444",
-              "&:hover": {
-                backgroundColor: "#444444",
-              },
-            }}
-            onClick={() => handleResultClick(result.id)}
-          >
-            <Typography variant="subtitle1" sx={{ color: "white" }}>
-              {result.subject}
-            </Typography>
-            <Typography variant="body2" sx={{ color: "#bbbbbb" }}>
-              {result.sender}
-            </Typography>
-          </Box>
-        ))}
+        <AnimatePresence>
+          {searchResults.map((result, index) => (
+            <motion.div
+              key={result.id}
+              variants={resultVariants}
+              initial="hidden"
+              animate="visible"
+              custom={index}
+              exit="hidden"
+            >
+              <Box
+                sx={{
+                  cursor: "pointer",
+                  padding: "12px",
+                  borderBottom: "1px solid #444444",
+                  "&:hover": {
+                    backgroundColor: "#444444",
+                  },
+                }}
+                onClick={() => handleResultClick(result.id, navigate, onClose)}
+              >
+                <Typography variant="subtitle1" sx={{ color: "white" }}>
+                  {result.subject}
+                </Typography>
+                <Typography variant="body2" sx={{ color: "#bbbbbb" }}>
+                  {result.sender}
+                </Typography>
+              </Box>
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </CardContent>
     </Card>
   );
@@ -114,7 +171,8 @@ const navigateToEmailDetails = (emailId, searchTerm, navigate) => {
 function SearchPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
-  const [showResults, setShowResults] = useState(false);
+  const [showSearchCard, setShowSearchCard] = useState(false);
+  const [showSearchBar, setShowSearchBar] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -131,20 +189,20 @@ function SearchPage() {
           // Validate the response data
           if (response.data && Array.isArray(response.data.emails)) {
             setSearchResults(response.data.emails);
-            setShowResults(true);
+            setShowSearchCard(true);
           } else {
             console.error("Invalid response format from the server");
             setSearchResults([]);
-            setShowResults(false);
+            setShowSearchCard(false);
           }
         } catch (error) {
           console.error("Error searching emails:", error);
           setSearchResults([]);
-          setShowResults(false);
+          setShowSearchCard(false);
         }
       } else {
         setSearchResults([]);
-        setShowResults(false);
+        setShowSearchCard(false);
       }
     };
 
@@ -160,38 +218,44 @@ function SearchPage() {
   const handleClose = () => {
     console.log("Closing search results popup");
     setSearchTerm("");
-    setShowResults(false);
+    setShowSearchCard(false);
+    setShowSearchBar(true);
   };
 
   return (
-    <Box sx={{ padding: "20px" }}>
-      <Search>
-        <SearchIconWrapper>
-          <SearchIcon />
-        </SearchIconWrapper>
-        <StyledInputBase
-          placeholder="Search"
-          inputProps={{ "aria-label": "search" }}
-          value={searchTerm}
-          onChange={(event) => setSearchTerm(event.target.value)}
-          onFocus={() => setShowResults(true)}
-        />
-      </Search>
+    <Box sx={{ padding: "20px", position: "relative" }}>
       <Backdrop
         sx={{
           zIndex: 999,
           backgroundColor: "rgba(0, 0, 0, 0.5)",
-          filter: "blur(4px)",
+          backdropFilter: "blur(4px)",
         }}
-        open={showResults}
-        onClick={() => setShowResults(false)}
+        open={showSearchCard}
+        onClick={handleClose}
       />
-      {showResults && (
-        <SearchResultsPopup
+      {showSearchBar && (
+        <Search onClick={() => {
+          setShowSearchCard(true);
+          setShowSearchBar(false);
+        }}>
+          <SearchIconWrapper>
+            <SearchIcon />
+          </SearchIconWrapper>
+          <StyledInputBase
+            placeholder={"What are you looking for? \u{1F440}"}
+            inputProps={{ "aria-label": "search" }}
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+          />
+        </Search>
+      )}
+      {showSearchCard && (
+        <SearchCard
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
           searchResults={searchResults}
           onClose={handleClose}
           navigate={navigate}
-          searchTerm={searchTerm}
         />
       )}
     </Box>

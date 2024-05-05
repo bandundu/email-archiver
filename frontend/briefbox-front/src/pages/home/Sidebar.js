@@ -23,6 +23,7 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
 import GroupIcon from "@mui/icons-material/Group";
 import DescriptionIcon from "@mui/icons-material/Description";
+import WidgetsIcon from '@mui/icons-material/Widgets';
 
 const drawerWidth = 240;
 const collapsedDrawerWidth = 56;
@@ -147,10 +148,10 @@ function Sidebar({ isOpen, toggleDrawer }) {
             link: "/archive",
           },
           {
-            text: "Accounts",
-            icon: <AccountCircleIcon />,
-            disabled: false,
-            link: "/accounts",
+            text: "Clusters", // TODO: Implement Clusters Page that show users clusters of similar emails
+            icon: <WidgetsIcon />,
+            disabled: true,
+            link: "/retention-rules",
           },
           {
             text: "Retention Rules",
@@ -198,17 +199,18 @@ function Sidebar({ isOpen, toggleDrawer }) {
       <Divider sx={{ bgcolor: "grey", marginLeft: 4, marginRight: 4 }} />
       <List>
         {[
+
+          {
+            text: "Accounts",
+            icon: <AccountCircleIcon />,
+            disabled: false,
+            link: "/accounts",
+          },
           {
             text: "Settings",
             icon: <SettingsIcon />,
             disabled: false,
             link: "/settings",
-          },
-          {
-            text: "Users & Groups",
-            icon: <GroupIcon />,
-            disabled: true,
-            link: "/users-groups",
           },
           {
             text: "Protocols",
