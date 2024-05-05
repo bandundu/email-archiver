@@ -4,11 +4,12 @@
   </a>
 </p>
 
-**This project is currently in early development, and things may break unexpectedly. It also lacks proper authentication.** It is **NOT** recommended to expose this application to the internet, as you will be providing the world access to your emails. Use at your own discretion and only in a controlled environment for now.
+**This project is currently in early development, and things may break unexpectedly. It also lacks proper authentication.**
 
 # Briefbox
 
 Briefbox is a tool for archiving emails from multiple IMAP and POP3 accounts. It provides a user-friendly web interface for managing email accounts, searching archived emails, and viewing email details along with attachments. One of the standout features of Briefbox is its advanced search functionality, which allows users to quickly find specific emails using various criteria.
+
 
 ![grafik](https://github.com/bandundu/email-archiver/assets/41874924/6b0b06f3-0f49-4f55-82a9-3471c7ee0c42)
 ![grafik](https://github.com/bandundu/email-archiver/assets/41874924/856f4f56-6016-476b-857f-f63fe37706aa)
@@ -53,8 +54,6 @@ Briefbox is a tool for archiving emails from multiple IMAP and POP3 accounts. It
    - Start the backend and frontend servers
 
 5. Access the web interface by opening a web browser and navigating to `http://localhost:3000`.
-
-6. Use the web interface to add email accounts, search for emails, and view email details.
 
 <!-- ## Setup and Usage
 
