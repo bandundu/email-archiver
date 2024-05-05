@@ -56,8 +56,9 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 
 const SearchResultsPopup = ({ searchResults, onClose, navigate }) => {
   const handleResultClick = (emailId) => {
-    navigate(`/email-details/${emailId}`);
+    console.log(`Clicked on search result with email ID: ${emailId}`);
     onClose();
+    navigateToEmailDetails(emailId, navigate);
   };
 
   return (
@@ -104,7 +105,13 @@ const SearchResultsPopup = ({ searchResults, onClose, navigate }) => {
   );
 };
 
-function SearchBar() {
+const navigateToEmailDetails = (emailId, navigate) => {
+  console.log("Inside navigateToEmailDetails function");
+  console.log(`Navigating to email details page for email ID: ${emailId}`);
+  navigate(`/email-details/${emailId}`);
+};
+
+function SearchPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
@@ -114,9 +121,12 @@ function SearchBar() {
     const fetchSearchResults = async () => {
       if (searchTerm.trim() !== "") {
         try {
-          const response = await axios.post("http://localhost:5050/emails/search_emails", {
-            query: searchTerm,
-          });
+          const response = await axios.post(
+            "http://localhost:5050/emails/search_emails",
+            {
+              query: searchTerm,
+            }
+          );
 
           // Validate the response data
           if (response.data && Array.isArray(response.data.emails)) {
@@ -148,12 +158,13 @@ function SearchBar() {
   }, [searchTerm]);
 
   const handleClose = () => {
+    console.log("Closing search results popup");
     setSearchTerm("");
     setShowResults(false);
   };
 
   return (
-    <Box sx={{ position: "relative" }}>
+    <Box sx={{ padding: "20px" }}>
       <Search>
         <SearchIconWrapper>
           <SearchIcon />
@@ -164,7 +175,6 @@ function SearchBar() {
           value={searchTerm}
           onChange={(event) => setSearchTerm(event.target.value)}
           onFocus={() => setShowResults(true)}
-          onBlur={() => setShowResults(false)}
         />
       </Search>
       <Backdrop
@@ -187,4 +197,4 @@ function SearchBar() {
   );
 }
 
-export default SearchBar;
+export default SearchPage;
