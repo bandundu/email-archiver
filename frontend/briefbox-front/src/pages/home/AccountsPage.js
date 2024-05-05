@@ -30,7 +30,7 @@ const AccountsPage = () => {
     protocol: "imap",
     server: "",
     port: "",
-    interval: 60,
+    interval: 300,
     selectedInboxes: [],
   });
   const [availableInboxes, setAvailableInboxes] = useState([]);
@@ -97,7 +97,7 @@ const AccountsPage = () => {
             protocol: "imap",
             server: "",
             port: "",
-            interval: 60,
+            interval: 300,
             selectedInboxes: [],
           });
           setShowAddAccountForm(false);
@@ -124,7 +124,7 @@ const AccountsPage = () => {
           protocol: "imap",
           server: "",
           port: "",
-          interval: 60,
+          interval: 300,
           selectedInboxes: [],
         });
         setShowConfirmationDialog(false);
@@ -159,7 +159,7 @@ const AccountsPage = () => {
           protocol: "pop3",
           server: "",
           port: "",
-          interval: 60, // Reset the interval to the default value
+          interval: 300, // Reset the interval to the default value
         });
       }
     } catch (error) {

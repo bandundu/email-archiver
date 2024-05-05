@@ -4,7 +4,7 @@ import email_archiver as email_archiver
 import imaplib
 import poplib
 import sqlite3
-from queue_manager import task_queue, ACCOUNT_CREATION
+from queue_manager import task_queue, ACCOUNT_CREATION, Task
 
 router = APIRouter()
 
@@ -43,16 +43,17 @@ def create_account(account_data: AccountData):
     if not all([email, password, protocol.lower(), server, port]):
         return {"error": "Missing required fields"}
 
-    task_queue.put({
-        'type': ACCOUNT_CREATION,
-        'email': email,
-        'password': password,
-        'protocol': protocol,
-        'server': server,
-        'port': port,
-        'interval': interval,
-        'selected_inboxes': selected_inboxes
-    })
+    task_data = {
+        "email": email,
+        "password": password,
+        "protocol": protocol,
+        "server": server,
+        "port": port,
+        "selected_inboxes": selected_inboxes,
+        "interval": interval,
+    }
+    task = Task.create_task(ACCOUNT_CREATION, task_data)
+    task_queue.put(task)
 
     return {"message": "Account creation queued successfully"}
     

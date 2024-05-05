@@ -10,7 +10,7 @@ class AccountData(BaseModel):
     protocol: str
     server: str
     port: int
-    interval: int = 60
+    interval: int = 300
     selected_inboxes: Optional[list] = None
 
 class SearchQuery(BaseModel):

@@ -406,7 +406,7 @@ def decode_filename(filename):
     return "".join(decoded_parts)
 
 
-def create_account(conn, email, password, protocol, server, port, interval=60, selected_inboxes=None):
+def create_account(conn, email, password, protocol, server, port, interval=300, selected_inboxes=None):
     logging.info(f"Creating {protocol.upper()} account for {email}.")
     mailbox = "INBOX" if protocol == "imap" else None
 
