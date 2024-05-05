@@ -96,11 +96,21 @@ def email_details(email_id: int):
             "body": email[6],
             "content_type": email[7],
         }
+
         attachment_data = [
             {"id": attachment[0], "filename": attachment[1]}
             for attachment in attachments
         ]
-        return {"email": email_data, "attachments": attachment_data}
+
+        # Check if the email body is large
+        body_size = len(email[6])
+        is_large_file = body_size > 1000000  # Adjust the threshold as needed
+
+        return {
+            "email": email_data,
+            "attachments": attachment_data,
+            "is_large_file": is_large_file,
+        }
     else:
         return {"error": "Email not found"}
 

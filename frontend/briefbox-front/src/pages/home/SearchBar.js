@@ -54,11 +54,11 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
   },
 }));
 
-const SearchResultsPopup = ({ searchResults, onClose, navigate }) => {
+const SearchResultsPopup = ({ searchResults, onClose, navigate, searchTerm }) => {
   const handleResultClick = (emailId) => {
     console.log(`Clicked on search result with email ID: ${emailId}`);
     onClose();
-    navigateToEmailDetails(emailId, navigate);
+    navigateToEmailDetails(emailId, searchTerm, navigate);
   };
 
   return (
@@ -105,10 +105,10 @@ const SearchResultsPopup = ({ searchResults, onClose, navigate }) => {
   );
 };
 
-const navigateToEmailDetails = (emailId, navigate) => {
+const navigateToEmailDetails = (emailId, searchTerm, navigate) => {
   console.log("Inside navigateToEmailDetails function");
   console.log(`Navigating to email details page for email ID: ${emailId}`);
-  navigate(`/email-details/${emailId}`);
+  navigate(`/email-details/${emailId}?searchTerm=${encodeURIComponent(searchTerm)}`);
 };
 
 function SearchPage() {
@@ -191,6 +191,7 @@ function SearchPage() {
           searchResults={searchResults}
           onClose={handleClose}
           navigate={navigate}
+          searchTerm={searchTerm}
         />
       )}
     </Box>

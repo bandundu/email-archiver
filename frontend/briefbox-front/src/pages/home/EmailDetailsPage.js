@@ -18,6 +18,7 @@ import { CircularProgress } from "@mui/material";
 const EmailDetailsPage = () => {
   const { emailId } = useParams();
   const navigate = useNavigate();
+  const searchTerm = new URLSearchParams(window.location.search).get("searchTerm");
   const [email, setEmail] = useState(null);
   const [attachments, setAttachments] = useState([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -25,6 +26,8 @@ const EmailDetailsPage = () => {
   const [totalEmails, setTotalEmails] = useState(0);
   const emailContentRef = useRef(null);
   const [emailCache, setEmailCache] = useState({});
+  const [isLargeFile, setIsLargeFile] = useState(false);
+  const [showLargeFile, setShowLargeFile] = useState(false);
 
   const isMobile = useMediaQuery("(max-width:900px)");
 
@@ -38,6 +41,13 @@ const EmailDetailsPage = () => {
       }
       navigate(`/email-details/${previousEmailId}`);
     }
+  };
+
+  const highlightMatches = (text) => {
+    if (!searchTerm) return text;
+
+    const regex = new RegExp(`(${searchTerm})`, "gi");
+    return text.replace(regex, "<mark>$1</mark>");
   };
 
   const handleNextEmail = () => {
@@ -83,6 +93,7 @@ const EmailDetailsPage = () => {
         );
         setEmail(response.data.email);
         setAttachments(response.data.attachments);
+        setIsLargeFile(response.data.is_large_file);
         setEmailCache((prevCache) => ({
           ...prevCache,
           [emailId]: response.data.email,
@@ -132,6 +143,34 @@ const EmailDetailsPage = () => {
   const renderEmailContent = () => {
     if (!email) return null;
 
+    if (isLargeFile && !showLargeFile) {
+      return (
+        <div>
+          <Typography variant="body1" sx={{ color: "white" }}>
+            This email contains a large file. Do you want to display it?
+          </Typography>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => setShowLargeFile(true)}
+          >
+            Display File
+          </Button>
+        </div>
+      );
+    }
+
+    if (isLargeFile && showLargeFile) {
+      return (
+        <div>
+          <CircularProgress color="primary" />
+          <Typography variant="body1" sx={{ color: "white", marginTop: "10px" }}>
+            Loading large file...
+          </Typography>
+        </div>
+      );
+    }
+
     const { body, content_type } = email;
 
     const emailContentStyle = {
@@ -157,24 +196,23 @@ const EmailDetailsPage = () => {
           style={{
             ...emailContentStyle,
             whiteSpace: "pre-wrap",
-            overflowX: "auto", // Add this line to enable horizontal scrolling if the content exceeds the container width
+            overflowX: "auto",
           }}
           contentEditable="false"
-        >
-          {body}
-        </pre>
+          dangerouslySetInnerHTML={{ __html: highlightMatches(body) }}
+        />
       );
     } else if (content_type === "text/html") {
+      const highlightedBody = highlightMatches(body);
       return (
         <div
-          dangerouslySetInnerHTML={{ __html: body }}
+          dangerouslySetInnerHTML={{ __html: highlightedBody }}
           style={{
             width: "100%",
-            overflowX: "auto", // Add this line to enable horizontal scrolling if the content exceeds the container width
-            boxSizing: "border-box", // Include padding and border in the width calculation
-            padding: "20px", // Adjust the padding as needed
-            backgroundColor: "#fff", // Set a background color to isolate the content
-            //border: "1px solid #ccc", // Add a border to visually separate the content
+            overflowX: "auto",
+            boxSizing: "border-box",
+            padding: "20px",
+            backgroundColor: "#fff",
           }}
         />
       );
