@@ -196,12 +196,6 @@ const EmailDetailsPage = () => {
       return `http://localhost:5050/attachments/get_inline_image/${encodeURIComponent(cid)}`;
     });
 
-    // Filter out attachments with cid (inline images)
-    const nonInlineAttachments = attachments.filter(
-      (attachment) => !attachment.filename.includes("cid:")
-    );
-
-
     if (content_type === "text/plain") {
       return (
         <pre
