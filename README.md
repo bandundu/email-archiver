@@ -1,4 +1,4 @@
-Join our Discord community: [![Discord](https://img.shields.io/discord/898588993000644874?color=7289DA&label=Discord&logo=discord&logoColor=white)](https://discord.gg/KvK5yXeP)
+[![Discord](https://img.shields.io/discord/898588993000644874?color=7289DA&label=Discord&logo=discord&logoColor=white)](https://discord.gg/KvK5yXeP)
 
 🚨🚨🚨 IMPORTANT DISCLAIMER 🚨🚨🚨
 
