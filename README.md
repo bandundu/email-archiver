@@ -122,16 +122,6 @@ docker-compose up
 
 4. Use the web interface to add email accounts, search for emails, and view email details. -->
 
-## Future Enhancements
-
-- Email export functionality
-- Gmail and Outlook OAuth2 authentication
-- Advanced search capabilities (e.g., date range, multiple criteria)
-- Improved user interface and user experience
-
-## Contributing
-
-Contributions are welcome! If you have any ideas, suggestions, or bug reports, please open an issue or submit a pull request. Make sure to follow the project's code of conduct.
 
 ## Star History
 
