@@ -1,12 +1,10 @@
-[![Discord](https://img.shields.io/discord/898588993000644874?color=7289DA&label=Discord&logo=discord&logoColor=white)](https://discord.gg/KvK5yXeP)
-
-🚨🚨🚨 IMPORTANT DISCLAIMER 🚨🚨🚨
+<p align="center">
+  <a href="https://discord.gg/your-invite-link">
+    <img src="https://img.shields.io/discord/1236779067252936736?color=7289DA&label=Discord&logo=discord&logoColor=white&style=for-the-badge" alt="Discord">
+  </a>
+</p>
 
 **This project is currently in early development, and things may break unexpectedly. It also lacks proper authentication.** It is **NOT** recommended to expose this application to the internet, as you will be providing the world access to your emails. Use at your own discretion and only in a controlled environment for now.
-
-While feedback and contributions are appreciated during this early development phase, please note that this project is not yet suitable for use as a stable email backup solution. The first stable release is targeted for the end of the year. If you require a reliable email archiving solution, it is advisable to wait until the stable release.
-
-**Use at your own risk and in a controlled environment only.**
 
 # Briefbox
 
