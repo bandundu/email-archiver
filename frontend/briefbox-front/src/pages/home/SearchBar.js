@@ -108,8 +108,21 @@ const SearchCard = ({ searchTerm, setSearchTerm, searchResults, onClose, navigat
       }}
       onKeyDown={handleKeyDown}
     >
-      <Box sx={{ padding: "20px", display: "flex", alignItems: "center" }}>
-        <Search>
+      <Box
+        sx={{
+          padding: "20px",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
+        <Search
+          sx={{
+            width: "100%",
+            maxWidth: "600px", // Set a maximum width for the search bar
+            display: "flex",
+          }}
+        >
           <SearchIconWrapper>
             <SearchIcon />
           </SearchIconWrapper>
@@ -119,11 +132,21 @@ const SearchCard = ({ searchTerm, setSearchTerm, searchResults, onClose, navigat
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             inputRef={searchInputRef}
+            sx={{
+              width: "100%",
+              paddingRight: "40px",
+            }}
           />
+          <IconButton
+            onClick={onClose}
+            sx={{
+              marginLeft: "auto",
+              marginRight: "-40px",
+            }}
+          >
+            <CloseIcon sx={{ color: "white" }} />
+          </IconButton>
         </Search>
-        <IconButton onClick={onClose} sx={{ marginLeft: "auto" }}>
-          <CloseIcon sx={{ color: "white" }} />
-        </IconButton>
       </Box>
       <CardContent>
         <AnimatePresence>
@@ -229,6 +252,11 @@ function SearchPage() {
           zIndex: 999,
           backgroundColor: "rgba(0, 0, 0, 0.5)",
           backdropFilter: "blur(4px)",
+          position: "fixed", // Added to prevent background movement
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
         }}
         open={showSearchCard}
         onClick={handleClose}
@@ -242,7 +270,7 @@ function SearchPage() {
             <SearchIcon />
           </SearchIconWrapper>
           <StyledInputBase
-            placeholder={"What are you looking for? \u{1F440}"}
+            placeholder={"Search..."}
             inputProps={{ "aria-label": "search" }}
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
