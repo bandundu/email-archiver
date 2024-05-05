@@ -21,6 +21,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import axios from "axios";
+import { Toaster, toast } from 'sonner';
 
 const AccountsPage = () => {
   const [accounts, setAccounts] = useState([]);
@@ -40,22 +41,33 @@ const AccountsPage = () => {
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
 
   useEffect(() => {
-    fetchAccounts();
-  }, []);
+    let isMounted = true;
 
-  const fetchAccounts = async () => {
-    try {
-      const response = await axios.get("http://localhost:5050/accounts/get_accounts");
-      const updatedAccounts = response.data.map((account) => ({
-        ...account,
-        protocol: account.protocol.toUpperCase(),
-        interval: account.interval || 300, // Set a default interval if not provided
-      }));
-      setAccounts(updatedAccounts);
-    } catch (error) {
-      console.error("Error fetching accounts:", error);
-    }
-  };
+    const fetchAccounts = async () => {
+      try {
+        const response = await axios.get("http://localhost:5050/accounts/get_accounts");
+        const updatedAccounts = response.data.map((account) => ({
+          ...account,
+          protocol: account.protocol.toUpperCase(),
+          interval: account.interval || 300,
+        }));
+        if (isMounted) {
+          setAccounts(updatedAccounts);
+        }
+      } catch (error) {
+        console.error("Error fetching accounts:", error);
+        if (isMounted) {
+          toast.error('Failed to fetch accounts');
+        }
+      }
+    };
+
+    fetchAccounts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleAddAccount = async () => {
     try {
@@ -72,15 +84,15 @@ const AccountsPage = () => {
           }
         );
         const availableInboxes = inboxResponse.data.available_inboxes;
-        
+
         setAvailableInboxes(availableInboxes);
-  
+
         // Set selectedInboxes to include all available inboxes by default
         setNewAccount((prevAccount) => ({
           ...prevAccount,
           selectedInboxes: availableInboxes,
         }));
-  
+
         // Open the confirmation dialog for IMAP accounts
         setShowConfirmationDialog(true);
       } else {
@@ -101,10 +113,12 @@ const AccountsPage = () => {
             selectedInboxes: [],
           });
           setShowAddAccountForm(false);
+          toast.success('Account created successfully');
         }
       }
     } catch (error) {
       console.error("Error fetching available inboxes or creating account:", error);
+      toast.error('Failed to create account');
     }
   };
 
@@ -129,9 +143,11 @@ const AccountsPage = () => {
         });
         setShowConfirmationDialog(false);
         setShowAddAccountForm(false);
+        toast.success('Account created successfully');
       }
     } catch (error) {
       console.error("Error creating account:", error);
+      toast.error('Failed to create account');
     }
   };
 
@@ -161,9 +177,11 @@ const AccountsPage = () => {
           port: "",
           interval: 300, // Reset the interval to the default value
         });
+        toast.success('Account updated successfully');
       }
     } catch (error) {
       console.error("Error updating account:", error);
+      toast.error('Failed to update account');
     }
   };
 
@@ -175,9 +193,11 @@ const AccountsPage = () => {
       if (response.status === 200) {
         const updatedAccounts = accounts.filter((acc) => acc.id !== accountId);
         setAccounts(updatedAccounts);
+        toast.success('Account deleted successfully');
       }
     } catch (error) {
       console.error("Error deleting account:", error);
+      toast.error('Failed to delete account');
     }
   };
 
@@ -187,6 +207,7 @@ const AccountsPage = () => {
 
   return (
     <BaseLayout pageTitle="Accounts" pageSubtitle="Manage your email accounts">
+      <Toaster richColors />
       <Box>
         <Box
           sx={{

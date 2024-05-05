@@ -42,7 +42,7 @@ const SearchIconWrapper = styled("div")(({ theme }) => ({
 }));
 
 const StyledInputBase = styled(InputBase)(({ theme }) => ({
-  color: "inherit",
+  color: "white", // Change the color to white
   "& .MuiInputBase-input": {
     padding: theme.spacing(1, 1, 1, 0),
     paddingLeft: `calc(1em + ${theme.spacing(4)})`,
@@ -267,7 +267,7 @@ function SearchPage() {
 
     const debounceTimer = setTimeout(() => {
       fetchSearchResults();
-    }, 250);
+    }, 400);
 
     return () => {
       clearTimeout(debounceTimer);
@@ -303,7 +303,7 @@ function SearchPage() {
         <Search
           onClick={() => {
             setShowSearchCard(true);
-            setShowSearchBar(false);
+            setShowSearchBar(true);
           }}
         >
           <SearchIconWrapper>

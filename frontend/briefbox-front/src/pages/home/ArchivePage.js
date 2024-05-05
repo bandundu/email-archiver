@@ -34,6 +34,7 @@ import axios from "axios";
 import EmailAddress from "./EmailAddress";
 import { useNavigate } from "react-router-dom";
 import AttachmentIcon from "@mui/icons-material/Attachment";
+import { Toaster, toast } from "sonner";
 
 const ArchivePage = () => {
   const [emails, setEmails] = useState([]);
@@ -49,16 +50,6 @@ const ArchivePage = () => {
   const isMobile = useMediaQuery("(max-width:900px)");
   const archiveRef = useRef(null);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    fetchEmails();
-  }, [page, rowsPerPage, sortBy, sortOrder]);
-
-  useEffect(() => {
-    if (archiveRef.current) {
-      archiveRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [page]);
 
   const fetchEmails = async () => {
     try {
@@ -78,8 +69,29 @@ const ArchivePage = () => {
       setTotalEmails(response.data.total_emails);
     } catch (error) {
       console.error("Error fetching emails:", error);
+      toast.error("Failed to fetch emails");
     }
   };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchEmailsWrapper = async () => {
+      await fetchEmails();
+    };
+
+    fetchEmailsWrapper();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [page, rowsPerPage, sortBy, sortOrder]);
+
+  useEffect(() => {
+    if (archiveRef.current) {
+      archiveRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [page]);
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -125,6 +137,7 @@ const ArchivePage = () => {
   const handleDeleteEmail = (emailId) => {
     setEmailToDelete(emailId);
     setDeleteConfirmationOpen(true);
+    toast.success("Email deleted successfully");
   };
 
   const cardVariants = {
@@ -234,7 +247,11 @@ const ArchivePage = () => {
                     <Typography variant="body2" sx={{ color: "#bdbdbd" }}>
                       Date: {email.date}
                     </Typography>
-                    {email.hasAttachments && (<AttachmentIcon sx={{ color: "white", marginLeft: "4px" }} />)}
+                    {email.hasAttachments && (
+                      <AttachmentIcon
+                        sx={{ color: "white", marginLeft: "4px" }}
+                      />
+                    )}
                   </CardContent>
                   <CardActions>
                     <IconButton onClick={() => handleViewDetails(email.id)}>
@@ -273,13 +290,13 @@ const ArchivePage = () => {
               sx={{
                 color: "white",
                 "& .MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows":
-                {
-                  color: "white",
-                },
+                  {
+                    color: "white",
+                  },
                 "& .MuiTablePagination-select, .MuiTablePagination-selectIcon":
-                {
-                  color: "white",
-                },
+                  {
+                    color: "white",
+                  },
                 "& .MuiTablePagination-actions .MuiIconButton-root": {
                   color: "white",
                 },
@@ -356,9 +373,7 @@ const ArchivePage = () => {
                       <TableCell sx={{ color: "white" }}>
                         <EmailAddress emails={email.recipients.split(", ")} />
                       </TableCell>
-                      <TableCell sx={{ color: "white" }}>
-                        {email.date}
-                      </TableCell>
+                      <TableCell sx={{ color: "white" }}>{email.date}</TableCell>
                       <TableCell>
                         <IconButton onClick={() => handleViewDetails(email.id)}>
                           <VisibilityIcon sx={{ color: "white" }} />
@@ -401,13 +416,13 @@ const ArchivePage = () => {
               sx={{
                 color: "white",
                 "& .MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows":
-                {
-                  color: "white",
-                },
+                  {
+                    color: "white",
+                  },
                 "& .MuiTablePagination-select, .MuiTablePagination-selectIcon":
-                {
-                  color: "white",
-                },
+                  {
+                    color: "white",
+                  },
                 "& .MuiTablePagination-actions .MuiIconButton-root": {
                   color: "white",
                 },

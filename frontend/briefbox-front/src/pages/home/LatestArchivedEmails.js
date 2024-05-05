@@ -12,12 +12,16 @@ import {
   Paper,
 } from "@mui/material";
 import EmailAddress from "./EmailAddress";
+import { Toaster, toast } from 'sonner';
+
 
 function LatestArchivedEmails() {
   const [emails, setEmails] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchLatestEmails = async () => {
       try {
         const response = await axios.get("http://localhost:5050/emails/emails", {
@@ -28,12 +32,22 @@ function LatestArchivedEmails() {
             sort_order: "desc",
           },
         });
-        setEmails(response.data.emails);
+
+        if (isMounted) {
+          setEmails(response.data.emails);
+        }
       } catch (error) {
-        console.error("Error fetching latest emails:", error);
+        if (isMounted) {
+          toast.error("Error fetching latest emails");
+        }
       }
     };
+
     fetchLatestEmails();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleSubjectClick = (emailId) => {
@@ -48,6 +62,7 @@ function LatestArchivedEmails() {
         color: "white",
       }}
     >
+      <Toaster richColors />
       <Typography variant="h6" sx={{ padding: "16px" }}>
         Latest Archived Emails
       </Typography>
