@@ -132,3 +132,7 @@ docker-compose up
 ## Contributing
 
 Contributions are welcome! If you have any ideas, suggestions, or bug reports, please open an issue or submit a pull request. Make sure to follow the project's code of conduct.
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=bandundu/email-archiver&type=Date)](https://star-history.com/#bandundu/email-archiver&Date)
