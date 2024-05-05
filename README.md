@@ -4,7 +4,7 @@
   </a>
 </p>
 
-**This project is currently in early development, and things may break unexpectedly. It also lacks proper authentication.**
+**This project is currently in early development, and things may break unexpectedly.**
 
 # Briefbox
 
