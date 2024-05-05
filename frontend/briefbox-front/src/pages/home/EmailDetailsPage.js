@@ -189,6 +189,17 @@ const EmailDetailsPage = () => {
       boxSizing: "border-box", // Add this line to include padding and border in the width calculation
     };
 
+    const cidPattern = /cid:([^"]+)/g;
+    const replacedBody = body.replace(cidPattern, (match, cid) => {
+      return `http://localhost:5050/attachments/get_inline_image/${encodeURIComponent(cid)}`;
+    });
+
+    // Filter out attachments with cid (inline images)
+    const nonInlineAttachments = attachments.filter(
+      (attachment) => !attachment.filename.includes("cid:")
+    );
+
+
     if (content_type === "text/plain") {
       return (
         <pre
@@ -199,14 +210,13 @@ const EmailDetailsPage = () => {
             overflowX: "auto",
           }}
           contentEditable="false"
-          dangerouslySetInnerHTML={{ __html: highlightMatches(body) }}
+          dangerouslySetInnerHTML={{ __html: highlightMatches(replacedBody) }}
         />
       );
     } else if (content_type === "text/html") {
-      const highlightedBody = highlightMatches(body);
       return (
         <div
-          dangerouslySetInnerHTML={{ __html: highlightedBody }}
+          dangerouslySetInnerHTML={{ __html: replacedBody }}
           style={{
             width: "100%",
             overflowX: "auto",
@@ -346,7 +356,7 @@ const EmailDetailsPage = () => {
                           {attachments.map((attachment) => (
                             <li key={attachment.id}>
                               <a
-                                href={`http://localhost:5050/download_attachment/${attachment.id}`}
+                                href={`http://localhost:5050/attachments/download_attachment/${attachment.id}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 style={{ color: "white" }}
@@ -484,7 +494,7 @@ const EmailDetailsPage = () => {
                         {attachments.map((attachment) => (
                           <li key={attachment.id}>
                             <a
-                              href={`http://localhost:5050/download_attachment/${attachment.id}`}
+                              href={`http://localhost:5050/attachments/download_attachment/${attachment.id}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               style={{ color: "white" }}
