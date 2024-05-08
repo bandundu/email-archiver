@@ -92,10 +92,13 @@ const EmailDetailsPage = () => {
     return () => {
       document.removeEventListener("keydown", handleKeyPress);
       if (emailContentRef.current) {
-        emailContentRef.current.contentWindow.removeEventListener(
-          "keydown",
-          handleIframeKeyPress
-        );
+        const iframeContentWindow = emailContentRef.current.contentWindow;
+        if (iframeContentWindow) {
+          iframeContentWindow.removeEventListener(
+            "keydown",
+            handleIframeKeyPress
+          );
+        }
       }
     };
   }, [currentEmailIndex, totalEmails, emailCache]);
@@ -209,6 +212,13 @@ const EmailDetailsPage = () => {
       boxSizing: "border-box", // Add this line to include padding and border in the width calculation
     };
 
+    const preStyle = {
+      ...emailContentStyle,
+      whiteSpace: "pre-wrap",
+      overflowX: "auto",
+      fontFamily: "monospace", // Add a monospace font for better formatting
+    };
+
     const cidPattern = /cid:([^"]+)/g;
     const replacedBody = body.replace(cidPattern, (match, cid) => {
       return `http://localhost:5050/attachments/get_inline_image/${encodeURIComponent(cid)}`;
@@ -216,16 +226,7 @@ const EmailDetailsPage = () => {
 
     if (content_type === "text/plain") {
       return (
-        <pre
-          ref={emailContentRef}
-          style={{
-            ...emailContentStyle,
-            whiteSpace: "pre-wrap",
-            overflowX: "auto",
-          }}
-          contentEditable="false"
-          dangerouslySetInnerHTML={{ __html: highlightMatches(replacedBody) }}
-        />
+        <pre style={preStyle} contentEditable="false" dangerouslySetInnerHTML={{ __html: highlightMatches(replacedBody) }} />
       );
     } else if (content_type === "text/html") {
       return (

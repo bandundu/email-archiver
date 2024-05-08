@@ -774,19 +774,20 @@ def get_email_details(conn, email_id):
 
     if email:
         content_type = "text/plain"
-        logging.info(f"Email with ID {email_id} is a plain text email.")
+        body = email[6]
 
+        # Check for HTML content
         if (
-            "<!doctype html>" in email[6].lower()
-            or "<html" in email[6].lower()
-            or html_tags.search(email[6]) is not None
+            "<!doctype html>" in body.lower()
+            or "<html" in body.lower()
+            or html_tags.search(body) is not None
         ):
             content_type = "text/html"
             logging.info(f"Email with ID {email_id} is an HTML email.")
 
             # Replace code blocks with <pre><code> tags
             body = code_block_pattern.sub(
-                lambda match: f"<pre><code>{match.group()[3:-3]}</code></pre>", email[6]
+                lambda match: f"<pre><code>{match.group()[3:-3]}</code></pre>", body
             )
 
             # Extract the HTML portion of the email
@@ -797,24 +798,23 @@ def get_email_details(conn, email_id):
             )
             html_end = body.lower().rfind("</html>") + len("</html>")
             if html_start != -1 and html_end != -1:
-                email = (
-                    email[:6] + (body[html_start:html_end], content_type) + (email[-1],)
-                )
-            else:
-                email = email[:6] + (body, content_type) + (email[-1],)
+                body = body[html_start:html_end]
         else:
+            logging.info(f"Email with ID {email_id} is a plain text email.")
+
             # Replace code blocks with <pre><code> tags
             body = code_block_pattern.sub(
-                lambda match: f"<pre><code>{match.group()[3:-3]}</code></pre>", email[6]
+                lambda match: f"<pre><code>{match.group()[3:-3]}</code></pre>", body
             )
-            email = email[:6] + (body, content_type) + (email[-1],)
+
+        email = email[:6] + (body, content_type) + (email[-1],)
 
         attachment_filenames = email[-1].split(",") if email[-1] else []
         logging.info(
             f"Email details and attachments fetched successfully for email ID {email_id}."
         )
-        return email, attachments, attachment_filenames
 
+        return email, attachments, attachment_filenames
     else:
         logging.warning(f"Email with ID {email_id} not found.")
         return None, None, None
