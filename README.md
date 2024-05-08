@@ -41,41 +41,6 @@ Briefbox is a tool for archiving emails from multiple IMAP and POP3 accounts. It
    git clone https://github.com/bandundu/email-archiver.git
    ```
 
-2. Navigate to the project directory:
-
-   ```bash
-   cd email-archiver
-   ```
-
-3. Make the `setup.sh` script executable:
-
-   ```bash
-   chmod +x setup.sh
-   ```
-
-4. Run the `setup.sh` script to set up the project and start the application:
-
-   ```bash
-   ./setup.sh
-   ```
-
-   The script will perform the following steps:
-   - Create a virtual environment (if it doesn't exist)
-   - Activate the virtual environment
-   - Install the required dependencies for the backend
-   - Install the required dependencies for the frontend
-   - Start the backend and frontend servers
-
-5. Access the web interface by opening a web browser and navigating to `http://localhost:3000`.
-
-<!-- ## Setup and Usage
-
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/bandundu/email-archiver.git
-   ```
-
 2. Navigate to the backend directory:
 
    ```bash
@@ -132,7 +97,7 @@ Briefbox is a tool for archiving emails from multiple IMAP and POP3 accounts. It
 
 11. Use the web interface to add email accounts, search for emails, and view email details.
 
-**Note:** I apologize for the inconvenience, but I am are currently working on improving the Docker Compose setup for a smoother deployment experience. In the meantime, please follow the above steps for a bare-metal installation. -->
+**Note:** I apologize for the inconvenience, but I am are currently working on improving the Docker Compose setup for a smoother deployment experience. In the meantime, please follow the above steps for a bare-metal installation.
 
 <!-- 1. Create a `docker-compose.yml` file in a folder of your chosing with the following content:
 

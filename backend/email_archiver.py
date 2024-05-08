@@ -20,6 +20,7 @@ import hashlib
 import time
 from encryption import cipher_suite
 import cachetools
+import time
 
 # Create a cache with a maximum size of 1000 and a TTL of 5 minutes
 search_cache = cachetools.TTLCache(maxsize=1000, ttl=300)
@@ -476,11 +477,17 @@ def extract_body(email_message):
             if content_type in ["text/plain", "text/html"]:
                 payload = part.get_payload(decode=True)
                 charset = part.get_content_charset()
-                body += payload.decode(charset or "utf-8", errors="replace")
+                body_part = payload.decode(charset or "utf-8", errors="replace")
+                body_part = body_part.replace(
+                    "\r\n", "<br>"
+                )  # Replace escaped newlines with <br> tags
+                body += body_part
     else:
         payload = email_message.get_payload(decode=True)
         charset = email_message.get_content_charset()
         body = payload.decode(charset or "utf-8", errors="replace")
+        body = body.replace("\r\n", "<br>")  # Replace escaped newlines with <br> tags
+        
     return body
 
 
@@ -504,22 +511,6 @@ def decode_header(header):
         for part, encoding in parts
     ]
     return "".join(decoded_parts)
-
-
-def extract_body(email_message):
-    body = ""
-    if email_message.is_multipart():
-        for part in email_message.walk():
-            content_type = part.get_content_type()
-            if content_type in ["text/plain", "text/html"]:
-                payload = part.get_payload(decode=True)
-                charset = part.get_content_charset()
-                body += payload.decode(charset or "utf-8", errors="replace")
-    else:
-        payload = email_message.get_payload(decode=True)
-        charset = email_message.get_content_charset()
-        body = payload.decode(charset or "utf-8", errors="replace")
-    return body
 
 
 def decode_filename(filename):
