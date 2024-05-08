@@ -15,6 +15,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import axios from "axios";
 import { CircularProgress } from "@mui/material";
 import SearchBar from "./SearchBar";
+import EmailPlaceholder from "./EmailPlaceholder";
 
 
 const EmailDetailsPage = () => {
@@ -30,6 +31,7 @@ const EmailDetailsPage = () => {
   const [emailCache, setEmailCache] = useState({});
   const [isLargeFile, setIsLargeFile] = useState(false);
   const [showLargeFile, setShowLargeFile] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const isMobile = useMediaQuery("(max-width:900px)");
 
@@ -42,6 +44,14 @@ const EmailDetailsPage = () => {
         setAttachments([]);
       }
       navigate(`/email-details/${previousEmailId}`);
+    }
+  };
+
+  const handleIframeKeyPress = (event) => {
+    if (event.key === "ArrowLeft") {
+      handlePreviousEmail();
+    } else if (event.key === "ArrowRight") {
+      handleNextEmail();
     }
   };
 
@@ -81,6 +91,12 @@ const EmailDetailsPage = () => {
 
     return () => {
       document.removeEventListener("keydown", handleKeyPress);
+      if (emailContentRef.current) {
+        emailContentRef.current.contentWindow.removeEventListener(
+          "keydown",
+          handleIframeKeyPress
+        );
+      }
     };
   }, [currentEmailIndex, totalEmails, emailCache]);
 
@@ -137,8 +153,10 @@ const EmailDetailsPage = () => {
           [nextEmailId]: nextEmailResponse.data.email,
         }));
       }
+      setLoading(false);
     } catch (error) {
       console.error("Error fetching email details:", error);
+      setLoading(false);
     }
   };
 
@@ -212,15 +230,55 @@ const EmailDetailsPage = () => {
     } else if (content_type === "text/html") {
       return (
         <div
-          dangerouslySetInnerHTML={{ __html: replacedBody }}
           style={{
             width: "100%",
-            overflowX: "auto",
-            boxSizing: "border-box",
-            padding: "20px",
-            backgroundColor: "#fff",
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
           }}
-        />
+        >
+          <iframe
+            ref={(ref) => {
+              if (ref) {
+                ref.contentWindow.addEventListener("keydown", handleIframeKeyPress);
+              }
+            }}
+            srcDoc={`
+              <html>
+                <head>
+                  <style>
+                    /* CSS reset styles */
+                    body, h1, h2, h3, h4, h5, h6, p, ul, ol {
+                      margin: 0;
+                      padding: 0;
+                    }
+                    body {
+                      font-family: Arial, sans-serif;
+                      font-size: 16px;
+                      line-height: 1.5;
+                      padding: 20px; /* Add padding to the body element */
+                    }
+                    /* Add more reset styles as needed */
+                  </style>
+                </head>
+                <body>
+                  ${replacedBody}
+                </body>
+              </html>
+            `}
+            style={{
+              width: "100%",
+              flexGrow: 1,
+              border: "none",
+              backgroundColor: "#fff",
+            }}
+            sandbox="allow-same-origin"
+            onLoad={(event) => {
+              const iframe = event.target;
+              iframe.style.height = `${iframe.contentDocument.body.scrollHeight}px`;
+            }}
+          />
+        </div>
       );
     }
 
@@ -300,72 +358,79 @@ const EmailDetailsPage = () => {
                 }
                 mode="wait"
               >
-                {email && (
-                  <motion.div
-                    key={emailId}
-                    initial="initial"
-                    animate="animate"
-                    exit="exit"
-                    variants={emailVariants}
-                    transition={emailTransition}
-                    custom={
-                      currentEmailIndex >
-                        (emailCache[emailId] ? emailCache[emailId].id : email.id)
-                        ? "next"
-                        : "prev"
-                    }
-                    style={{ position: "absolute", width: "100%" }}
-                  >
-                    <Typography
-                      variant="h5"
-                      sx={{ color: "white", marginBottom: "10px" }}
+                {loading ? (
+                  <EmailPlaceholder />
+                ) : (
+                  email && (
+                    <motion.div
+                      key={emailId}
+                      initial="initial"
+                      animate="animate"
+                      exit="exit"
+                      variants={emailVariants}
+                      transition={emailTransition}
+                      custom={
+                        currentEmailIndex >
+                          (emailCache[emailId] ? emailCache[emailId].id : email.id)
+                          ? "next"
+                          : "prev"
+                      }
+                      style={{ position: "absolute", width: "100%" }}
                     >
-                      {email.subject}
-                    </Typography>
-                    <Typography
-                      variant="body1"
-                      sx={{ color: "white", marginBottom: "10px" }}
-                    >
-                      From: {email.sender}
-                    </Typography>
-                    <Typography
-                      variant="body1"
-                      sx={{ color: "white", marginBottom: "10px" }}
-                    >
-                      To: {email.recipients}
-                    </Typography>
-                    <Typography
-                      variant="body1"
-                      sx={{ color: "white", marginBottom: "20px" }}
-                    >
-                      Date: {email.date}
-                    </Typography>
-                    {attachments.length > 0 && (
-                      <>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
                         <Typography
-                          variant="h6"
-                          sx={{ color: "white", marginTop: "20px" }}
+                          variant="h5"
+                          sx={{ color: "white" }}
                         >
-                          Attachments:
+                          {email.subject}
                         </Typography>
-                        <ul>
-                          {attachments.map((attachment) => (
-                            <li key={attachment.id}>
-                              <a
-                                href={`http://localhost:5050/attachments/download_attachment/${attachment.id}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{ color: "white" }}
-                              >
-                                {attachment.filename}
-                              </a>
-                            </li>
-                          ))}
-                        </ul>
-                      </>
-                    )}
-                    {renderEmailContent()}
-                  </motion.div>
+                        <SearchBar />
+                      </Box>
+                      <Typography
+                        variant="body1"
+                        sx={{ color: "white", marginBottom: "10px" }}
+                      >
+                        From: {email.sender}
+                      </Typography>
+                      <Typography
+                        variant="body1"
+                        sx={{ color: "white", marginBottom: "10px" }}
+                      >
+                        To: {email.recipients}
+                      </Typography>
+                      <Typography
+                        variant="body1"
+                        sx={{ color: "white", marginBottom: "20px" }}
+                      >
+                        Date: {email.date}
+                      </Typography>
+                      {attachments.length > 0 && (
+                        <>
+                          <Typography
+                            variant="h6"
+                            sx={{ color: "white", marginTop: "20px" }}
+                          >
+                            Attachments:
+                          </Typography>
+                          <ul>
+                            {attachments.map((attachment) => (
+                              <li key={attachment.id}>
+                                <a
+                                  href={`http://localhost:5050/attachments/download_attachment/${attachment.id}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{ color: "white" }}
+                                >
+                                  {attachment.filename}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                        </>
+                      )}
+                      {renderEmailContent()}
+                    </motion.div>
+                  )
                 )}
               </AnimatePresence>
             </Box>
