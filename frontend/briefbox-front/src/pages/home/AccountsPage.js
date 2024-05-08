@@ -22,6 +22,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import axios from "axios";
 import { Toaster, toast } from 'sonner';
+import defaultProfilePic from '../../assets/default-profile-pic.svg';
 
 const AccountsPage = () => {
   const [accounts, setAccounts] = useState([]);
@@ -39,6 +40,9 @@ const AccountsPage = () => {
   const [editAccountId, setEditAccountId] = useState(null);
   const [expandedAccountId, setExpandedAccountId] = useState(null);
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
+  const [isEmailFocused, setIsEmailFocused] = useState(false);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -66,6 +70,32 @@ const AccountsPage = () => {
 
     return () => {
       isMounted = false;
+    };
+  }, []);
+
+  const togglePasswordVisibility = (visible) => {
+    setShowPassword(visible);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.ctrlKey) {
+        togglePasswordVisibility(true);
+      }
+    };
+
+    const handleKeyUp = (e) => {
+      if (e.key === "Control") {
+        togglePasswordVisibility(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keyup', handleKeyUp);
     };
   }, []);
 
@@ -207,6 +237,17 @@ const AccountsPage = () => {
 
   return (
     <BaseLayout pageTitle="Accounts" pageSubtitle="Manage your email accounts">
+      <style>
+        {`
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          .fade-in {
+            animation: fadeIn 1s ease-out;
+          }
+        `}
+      </style>
       <Toaster richColors />
       <Box>
         <Box
@@ -235,9 +276,12 @@ const AccountsPage = () => {
                 variant="outlined"
                 size="small"
                 value={newAccount.email}
+                placeholder="john.doe@example.com"
                 onChange={(e) =>
                   setNewAccount({ ...newAccount, email: e.target.value })
                 }
+                onFocus={() => setIsEmailFocused(true)}
+                onBlur={() => setIsEmailFocused(false)}
                 InputLabelProps={{
                   style: { color: "grey" },
                 }}
@@ -245,15 +289,22 @@ const AccountsPage = () => {
                   style: { color: "white" },
                 }}
               />
+              {isEmailFocused && (
+                <Typography variant="caption" align="left" className="fade-in" color="grey">
+                  Enter a valid email address.
+                </Typography>
+              )}
               <TextField
                 label="Password"
                 variant="outlined"
                 size="small"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 value={newAccount.password}
                 onChange={(e) =>
                   setNewAccount({ ...newAccount, password: e.target.value })
                 }
+                onFocus={() => setIsPasswordFocused(true)}
+                onBlur={() => setIsPasswordFocused(false)}
                 InputLabelProps={{
                   style: { color: "grey" },
                 }}
@@ -261,6 +312,11 @@ const AccountsPage = () => {
                   style: { color: "white" },
                 }}
               />
+              {isPasswordFocused && (
+                <Typography variant="caption" align="left" className="fade-in" color="grey">
+                  Hold Ctrl to display your password temporarily.
+                </Typography>
+              )}
               <TextField
                 label="Server"
                 variant="outlined"
@@ -481,5 +537,4 @@ const AccountsPage = () => {
     </BaseLayout>
   );
 };
-
 export default AccountsPage;
