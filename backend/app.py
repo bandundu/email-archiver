@@ -37,18 +37,16 @@ app.include_router(exports_router, prefix="/exports")
 app.include_router(utilities_router, prefix="/utilities")
 
 
-origins = [
-    "http://localhost:3000",
-]
+# Set up CORS middleware to allow requests from any origin
 
+# Literal quote from the help page: "Also, allow_origins cannot be set to [*] for credentials to be allowed, origins must be specified."  !!
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 if __name__ == "__main__":
 
