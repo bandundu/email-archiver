@@ -56,7 +56,7 @@ const AccountsPage = () => {
 
     const fetchAccounts = async () => {
       try {
-        const response = await axios.get("http://192.168.0.122:5050/accounts/get_accounts");
+        const response = await axios.get("http://192.168.0.112:5050/accounts/get_accounts");
         const updatedAccounts = response.data.map((account) => ({
           ...account,
           protocol: account.protocol.toUpperCase(),
