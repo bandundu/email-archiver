@@ -42,7 +42,7 @@ const SearchIconWrapper = styled("div")(({ theme }) => ({
 }));
 
 const StyledInputBase = styled(InputBase)(({ theme }) => ({
-  color: "white", // Change the color to white
+  color: "white",
   "& .MuiInputBase-input": {
     padding: theme.spacing(1, 1, 1, 0),
     paddingLeft: `calc(1em + ${theme.spacing(4)})`,
@@ -57,10 +57,9 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
   },
 }));
 
-const SearchCard = ({ searchTerm, setSearchTerm, searchResults, onClose, navigate }) => {
+const SearchCard = ({ searchTerm, setSearchTerm, searchResults, onClose, navigate, searchTime }) => {
   const searchInputRef = useRef(null);
-  const [searchTime, setSearchTime] = useState(0);
-  const [showNoResults, setShowNoResults] = useState(false); // Add this state variable
+  const [showNoResults, setShowNoResults] = useState(false);
 
   const cardVariants = {
     hidden: { opacity: 0, y: -50 },
@@ -78,8 +77,7 @@ const SearchCard = ({ searchTerm, setSearchTerm, searchResults, onClose, navigat
     } else {
       setShowNoResults(false);
     }
-  }, [searchTerm, searchResults]); // Add searchTerm and searchResults as dependencies
-
+  }, [searchTerm, searchResults]);
 
   const handleResultClick = (emailId, navigate, onClose) => {
     console.log(`Clicked on search result with email ID: ${emailId}`);
@@ -92,8 +90,6 @@ const SearchCard = ({ searchTerm, setSearchTerm, searchResults, onClose, navigat
       onClose();
     }
   };
-
-
 
   const resultVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -124,7 +120,7 @@ const SearchCard = ({ searchTerm, setSearchTerm, searchResults, onClose, navigat
         boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.5)",
         display: "flex",
         flexDirection: "column",
-        borderRadius: "12px", // Increased border radius
+        borderRadius: "12px",
       }}
       onKeyDown={handleKeyDown}
     >
@@ -172,7 +168,7 @@ const SearchCard = ({ searchTerm, setSearchTerm, searchResults, onClose, navigat
         {searchResults.length > 0 ? (
           <>
             <Typography variant="body2" sx={{ color: "#bbbbbb", marginBottom: "12px" }}>
-              {searchResults.length} matches found
+              {searchResults.length} matches found in {Math.round(searchTime * 1000)} ms
             </Typography>
             <AnimatePresence>
               {searchResults.map((result, index) => (
@@ -234,7 +230,6 @@ function SearchPage() {
     const fetchSearchResults = async () => {
       if (searchTerm.trim() !== "") {
         try {
-          const startTime = performance.now();
           const response = await axios.post(
             "http://localhost:5050/emails/search_emails",
             {
@@ -242,13 +237,11 @@ function SearchPage() {
             }
           );
 
-          const endTime = performance.now();
-          const searchDuration = (endTime - startTime) / 1000;
-          setSearchTime(searchDuration);
-
           if (response.data && Array.isArray(response.data.emails)) {
             setSearchResults(response.data.emails);
             setShowSearchCard(true);
+            setSearchTime(response.data.search_time);
+            console.log(`Search results fetched in ${response.data.search_time} seconds`);
           } else {
             console.error("Invalid response format from the server");
             setSearchResults([]);
@@ -319,17 +312,17 @@ function SearchPage() {
       )}
       {showSearchCard && (
         <SearchCard
+          key={searchResults.length}
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           searchResults={searchResults}
           onClose={handleClose}
           navigate={navigate}
-          searchTime={searchTime} // Pass searchTime as a prop
+          searchTime={searchTime}
         />
       )}
     </Box>
   );
 }
-
 
 export default SearchPage;

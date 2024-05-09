@@ -1,10 +1,18 @@
+# Services are used to interact with the database, perform business logic and other necesarry core functions. They are to be imported into the routes. Services should not use FastAPI's Request and Response classes. They should only return data to the routes. The routes will then use this data to return a response to the client.
+
+# queue_manager.py is a script that manages a task queue for creating accounts and retrieving emails. It initializes the task queue with email retrieval tasks for existing accounts and processes tasks based on their execution time. The script uses a worker thread to process tasks and executes account creation and email retrieval tasks as needed.
+
 import queue
 import threading
 import time
 import sqlite3
 import logging
-from email_archiver import create_account, fetch_and_archive_emails, get_account
-from email_archiver import get_database_connection
+from models.models import Account
+from models.database import get_db
+from config.config import config
+
+import services.email_service as email_service
+
 
 # Configure logging
 logging.basicConfig(
@@ -68,11 +76,9 @@ def initialize_email_retrieval_tasks():
     Initialize email retrieval tasks by querying the database for existing accounts
     and adding them to the task queue.
     """
-    conn = sqlite3.connect("data/email_archive.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, interval FROM accounts")
-    accounts = cursor.fetchall()
-    conn.close()
+    logging.info("Initializing email retrieval tasks...")
+    db = next(get_db())
+    accounts = db.query(Account.id, Account.update_interval).all()
 
     for account in accounts:
         account_id, interval = account
@@ -106,20 +112,17 @@ def process_tasks():
                     protocol = task.task_data["protocol"]
                     server = task.task_data["server"]
                     port = task.task_data["port"]
-                    interval = task.task_data["interval"]
+                    update_interval = task.task_data["interval"]
                     selected_inboxes = task.task_data["selected_inboxes"]
-                    conn = sqlite3.connect("data/email_archive.db")
-                    account_id = create_account(
-                        conn,
+                    account_id = email_service.create_account(
                         email,
                         password,
                         protocol,
                         server,
                         port,
-                        interval,
+                        update_interval,
                         selected_inboxes,
                     )
-                    conn.close()
                     if account_id:
                         logging.info(
                             f"Account created successfully for {email}. Adding to email retrieval queue."
@@ -128,7 +131,7 @@ def process_tasks():
                             Task.create_task(
                                 EMAIL_RETRIEVAL,
                                 {"account_id": account_id},
-                                interval=interval,
+                                interval=update_interval,
                                 execute_immediately=True,
                             )
                         )
@@ -137,58 +140,39 @@ def process_tasks():
 
                 elif task.task_type == EMAIL_RETRIEVAL:
                     account_id = task.task_data["account_id"]
-                    conn = sqlite3.connect("data/email_archive.db")
-                    account = get_account(conn, account_id)
+                    db = next(get_db())  # Get a database session
+                    account = db.query(Account).filter(Account.id == account_id).first()
                     if account:
-                        (
-                            email,
-                            encrypted_password,
-                            protocol,
-                            server,
-                            port,
-                            mailbox,
-                            available_inboxes,
-                            selected_inboxes,
-                            interval,
-                        ) = account[1:]
-                        fetch_and_archive_emails(
-                            conn,
+                        email_service.fetch_and_archive_emails(
                             account_id,
-                            protocol,
-                            server,
-                            port,
-                            email,
-                            encrypted_password,
-                            selected_inboxes,
+                            account.protocol,
+                            account.server,
+                            account.port,
+                            account.email,
+                            account.password,
+                            account.selected_inboxes,
                         )
                         logging.info(
                             f"Email retrieval completed for account {account_id}."
                         )
                     else:
                         logging.error(f"Account with ID {account_id} not found.")
-                    conn.close()
 
                 # Update the next execution time based on the interval (if provided)
                 if task.interval is not None:
                     task.next_execution = current_time + task.interval
-                    task.execute_immediately = False  # Set execute_immediately back to False
+                    task.execute_immediately = (
+                        False  # Set execute_immediately back to False
+                    )
                     task_queue.put(task.to_dict())
             else:
                 # If the task is not ready for execution, put it back in the queue
-                # logging with next execution time in human-readable format
-                #logging.info(
-                #    f"Task {task.task_type} not ready for execution. Putting back in queue. Next execution: {time.ctime(task.next_execution)}"
-                #)
                 task_queue.put(task.to_dict())
                 time.sleep(1)
         else:
             # If no tasks are available, sleep for a short interval before checking again
-            #logging.info("No tasks available. Sleeping for 1 second.")
             time.sleep(1)
 
-
-# Initialize the database connection
-conn = get_database_connection()
 
 # Start worker thread
 task_worker = threading.Thread(target=process_tasks)

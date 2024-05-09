@@ -1,3 +1,5 @@
+# schemas.py contains the Pydantic models used in the FastAPI application.
+
 from typing import Optional
 from pydantic import BaseModel
 

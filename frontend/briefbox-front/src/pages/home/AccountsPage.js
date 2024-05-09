@@ -23,6 +23,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import axios from "axios";
 import { Toaster, toast } from 'sonner';
 import defaultProfilePic from '../../assets/default-profile-pic.svg';
+import uiClickSound from '../../assets/sounds/Retro12.mp3';
 
 const AccountsPage = () => {
   const [accounts, setAccounts] = useState([]);
@@ -43,6 +44,12 @@ const AccountsPage = () => {
   const [isEmailFocused, setIsEmailFocused] = useState(false);
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const audioPlayer = new Audio(uiClickSound);
+
+  const playSound = () => {
+    audioPlayer.currentTime = 0; // Reset the audio player to the beginning
+    audioPlayer.play();
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -103,28 +110,32 @@ const AccountsPage = () => {
     try {
       if (newAccount.protocol === "imap") {
         // Fetch available inboxes for IMAP accounts
-        const inboxResponse = await axios.post(
-          "http://localhost:5050/accounts/get_available_inboxes",
-          {
-            email: newAccount.email,
-            password: newAccount.password,
-            protocol: newAccount.protocol,
-            server: newAccount.server,
-            port: newAccount.port,
-          }
-        );
-        const availableInboxes = inboxResponse.data.available_inboxes;
+        try {
+          const inboxResponse = await axios.post(
+            "http://localhost:5050/accounts/get_available_inboxes",
+            {
+              email: newAccount.email,
+              password: newAccount.password,
+              protocol: newAccount.protocol,
+              server: newAccount.server,
+              port: newAccount.port,
+            }
+          );
+          const availableInboxes = inboxResponse.data.available_inboxes;
+          setAvailableInboxes(availableInboxes);
+          // Set selectedInboxes to include all available inboxes by default
+          setNewAccount((prevAccount) => ({
+            ...prevAccount,
+            selectedInboxes: availableInboxes,
+          }));
 
-        setAvailableInboxes(availableInboxes);
+          // Open the confirmation dialog for IMAP accounts
+          setShowConfirmationDialog(true);
+        } catch (error) {
+          console.error("Error fetching available inboxes:", error);
+          toast.error('Failed to fetch available inboxes');
+        }
 
-        // Set selectedInboxes to include all available inboxes by default
-        setNewAccount((prevAccount) => ({
-          ...prevAccount,
-          selectedInboxes: availableInboxes,
-        }));
-
-        // Open the confirmation dialog for IMAP accounts
-        setShowConfirmationDialog(true);
       } else {
         // Create POP3 account without inbox selection
         const response = await axios.post(
@@ -144,6 +155,7 @@ const AccountsPage = () => {
           });
           setShowAddAccountForm(false);
           toast.success('Account created successfully');
+          playSound();
         }
       }
     } catch (error) {
@@ -174,6 +186,7 @@ const AccountsPage = () => {
         setShowConfirmationDialog(false);
         setShowAddAccountForm(false);
         toast.success('Account created successfully');
+        playSound();
       }
     } catch (error) {
       console.error("Error creating account:", error);
@@ -208,6 +221,7 @@ const AccountsPage = () => {
           interval: 300, // Reset the interval to the default value
         });
         toast.success('Account updated successfully');
+        playSound();
       }
     } catch (error) {
       console.error("Error updating account:", error);
@@ -224,6 +238,7 @@ const AccountsPage = () => {
         const updatedAccounts = accounts.filter((acc) => acc.id !== accountId);
         setAccounts(updatedAccounts);
         toast.success('Account deleted successfully');
+        playSound();
       }
     } catch (error) {
       console.error("Error deleting account:", error);
