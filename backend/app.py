@@ -2,6 +2,9 @@
 import logging
 from config.logging_config import configure_logging
 from config.config import config
+from starlette.middleware.base import BaseHTTPMiddleware
+from fastapi import Request
+
 
 configure_logging(config.LOG_LEVEL)
 
@@ -35,6 +38,18 @@ app.include_router(attachments_router, prefix="/attachments")
 app.include_router(emails_router, prefix="/emails")
 app.include_router(exports_router, prefix="/exports")
 app.include_router(utilities_router, prefix="/utilities")
+
+
+# Create a custom middleware to log incoming requests
+class RequestLoggingMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        logging.info(f"Incoming request: {request.method} {request.url}")
+        logging.info(f"Request headers: {request.headers}")
+        response = await call_next(request)
+        return response
+
+# Add the request logging middleware
+app.add_middleware(RequestLoggingMiddleware)
 
 
 # Configure CORS
