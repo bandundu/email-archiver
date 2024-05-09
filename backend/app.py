@@ -37,15 +37,19 @@ app.include_router(exports_router, prefix="/exports")
 app.include_router(utilities_router, prefix="/utilities")
 
 
-# Set up CORS middleware to allow requests from any origin
+# Configure CORS
+origins = [
+    "http://localhost:3000",
+    "http://192.168.0.112:3000",  # Add your frontend's domain here
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 if __name__ == "__main__":
 
     uvicorn.run(app, host="0.0.0.0", port=5050)
