@@ -16,6 +16,8 @@ initialize_database()
 # Import FastAPI and the CORS middleware
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import uvicorn
+
 
 # Import routers for different API endpoints
 from api.routes.accounts import router as accounts_router
@@ -45,7 +47,5 @@ app.add_middleware(
 )
 
 if __name__ == "__main__":
-
-    import uvicorn
 
     uvicorn.run(app, host="localhost", port=5050)

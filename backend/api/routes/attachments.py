@@ -1,16 +1,5 @@
-# Routes are responsible only responsible for handling requests, validating input, and returning responses. They should not contain any business logic. The business logic should be implemented in services.
-
-# attachments.py is responsible for handling requests related to attachments and inline images
-
-from fastapi import APIRouter, Response
-from api.schemas.schemas import AccountData
-
 import logging
-
-# Import config
-from config.config import config
-
-# Import services
+from fastapi import APIRouter, Response
 import services.attachment_service as attachment_service
 
 router = APIRouter()

@@ -1,10 +1,7 @@
-# Routes are responsible only responsible for handling requests, validating input, and returning responses. They should not contain any business logic. The business logic should be implemented in services.
-
 import logging
 
 from fastapi import APIRouter
 from api.schemas.schemas import AccountData
-
 
 # Import services
 import services.email_service as email_service
@@ -16,9 +13,7 @@ router = APIRouter()
 
 @router.post("/get_available_inboxes")
 def get_available_inboxes_route(account_data: AccountData):
-
-    logging.debug(f"Received request to get available inboxes for {account_data.email}")
-
+    
     email = account_data.email
     password = account_data.password
     protocol = account_data.protocol
@@ -36,7 +31,7 @@ def get_available_inboxes_route(account_data: AccountData):
     except Exception as e:
         logging.error(f"Failed to get available inboxes: {e}")
         return {"error": "Failed to get available inboxes"}
-    
+
     logging.debug(f"Available inboxes: {available_inboxes}")
     return {"available_inboxes": available_inboxes}
 

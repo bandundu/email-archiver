@@ -290,13 +290,13 @@ const ArchivePage = () => {
               sx={{
                 color: "white",
                 "& .MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows":
-                  {
-                    color: "white",
-                  },
+                {
+                  color: "white",
+                },
                 "& .MuiTablePagination-select, .MuiTablePagination-selectIcon":
-                  {
-                    color: "white",
-                  },
+                {
+                  color: "white",
+                },
                 "& .MuiTablePagination-actions .MuiIconButton-root": {
                   color: "white",
                 },
@@ -362,15 +362,35 @@ const ArchivePage = () => {
                   {emails.map((email) => (
                     <TableRow key={email.id}>
                       <TableCell
-                        sx={{ color: "white", cursor: "pointer" }}
+                        sx={{
+                          color: "white",
+                          cursor: "pointer",
+                          maxWidth: "300px", // Set a maximum width for the subject cell
+                          overflowWrap: "break-word", // Apply text wrapping
+                          wordWrap: "break-word", // Apply word wrapping
+                        }}
                         onClick={() => handleSubjectClick(email.id)}
                       >
                         {email.subject}
                       </TableCell>
-                      <TableCell sx={{ color: "white" }}>
+                      <TableCell
+                        sx={{
+                          color: "white",
+                          maxWidth: "200px", // Set a maximum width for the sender cell
+                          overflowWrap: "break-word",
+                          wordWrap: "break-word",
+                        }}
+                      >
                         <EmailAddress emails={[email.sender]} />
                       </TableCell>
-                      <TableCell sx={{ color: "white" }}>
+                      <TableCell
+                        sx={{
+                          color: "white",
+                          maxWidth: "200px", // Set a maximum width for the recipients cell
+                          overflowWrap: "break-word",
+                          wordWrap: "break-word",
+                        }}
+                      >
                         <EmailAddress emails={email.recipients.split(", ")} />
                       </TableCell>
                       <TableCell sx={{ color: "white" }}>{email.date}</TableCell>
@@ -378,27 +398,6 @@ const ArchivePage = () => {
                         <IconButton onClick={() => handleViewDetails(email.id)}>
                           <VisibilityIcon sx={{ color: "white" }} />
                         </IconButton>
-                        {/* <IconButton
-                          onClick={() => handleReply(email.id)}
-                          disabled
-                        >
-                          <ReplyIcon sx={{ color: "grey" }} />
-                        </IconButton>
-                        <IconButton
-                          onClick={() => handleForward(email.id)}
-                          disabled
-                        >
-                          <ForwardIcon sx={{ color: "grey" }} />
-                        </IconButton>
-                        <IconButton
-                          onClick={() => handleMoveToFolder(email.id)}
-                          disabled
-                        >
-                          <FolderIcon sx={{ color: "grey" }} />
-                        </IconButton> */}
-                        {/* <IconButton onClick={() => handleDeleteEmail(email.id)}>
-                          <DeleteIcon sx={{ color: "white" }} />
-                        </IconButton> */}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -416,13 +415,13 @@ const ArchivePage = () => {
               sx={{
                 color: "white",
                 "& .MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows":
-                  {
-                    color: "white",
-                  },
+                {
+                  color: "white",
+                },
                 "& .MuiTablePagination-select, .MuiTablePagination-selectIcon":
-                  {
-                    color: "white",
-                  },
+                {
+                  color: "white",
+                },
                 "& .MuiTablePagination-actions .MuiIconButton-root": {
                   color: "white",
                 },

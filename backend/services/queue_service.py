@@ -5,11 +5,9 @@
 import queue
 import threading
 import time
-import sqlite3
 import logging
 from models.models import Account
 from models.database import get_db
-from config.config import config
 
 import services.email_service as email_service
 

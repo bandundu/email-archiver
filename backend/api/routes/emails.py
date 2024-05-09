@@ -1,19 +1,8 @@
-# Routes are responsible only responsible for handling requests, validating input, and returning responses. They should not contain any business logic. The business logic should be implemented in services.
-
-# emails.py contains the FastAPI router for email management endpoints. It includes endpoints to retrieve emails, search emails, get email details, and delete emails. The router also includes an endpoint to retrieve the latest emails.
-
 import logging
-
 from fastapi import APIRouter
 from api.schemas.schemas import SearchQuery
-
-# Import config
-from config.config import config
-
-# Import services
 import services.email_service as email_service
 import services.search_service as search_service
-
 
 # Create a new FastAPI router
 router = APIRouter()
