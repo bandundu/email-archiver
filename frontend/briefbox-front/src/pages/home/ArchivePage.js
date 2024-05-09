@@ -53,7 +53,7 @@ const ArchivePage = () => {
 
   const fetchEmails = async () => {
     try {
-      const response = await axios.get("http://localhost:5050/emails/emails", {
+      const response = await axios.get("http://0.0.0.0:5050/emails/emails", {
         params: {
           page: page + 1,
           per_page: rowsPerPage,
