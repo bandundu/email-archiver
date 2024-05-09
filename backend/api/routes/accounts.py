@@ -73,6 +73,8 @@ def create_account_route(account_data: AccountData):
 @router.get("/get_accounts")
 def get_accounts_route():
     logging.debug("Received request to get accounts")
+    logging.info(f"Received request at example endpoint: {request.method} {request.url}")
+    logging.info(f"Request headers: {request.headers}")
     accounts = email_service.read_accounts()
 
     accounts_data = [

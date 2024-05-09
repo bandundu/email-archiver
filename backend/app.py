@@ -43,8 +43,8 @@ app.include_router(utilities_router, prefix="/utilities")
 # Create a custom middleware to log incoming requests
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        logging.info(f"Incoming request: {request.method} {request.url}")
-        logging.info(f"Request headers: {request.headers}")
+        logging.debug(f"Incoming request: {request.method} {request.url}")
+        logging.debug(f"Request headers: {request.headers}")
         response = await call_next(request)
         return response
 
