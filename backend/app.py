@@ -40,12 +40,11 @@ app.include_router(utilities_router, prefix="/utilities")
 # Set up CORS middleware to allow requests from any origin
 
 # Literal quote from the help page: "Also, allow_origins cannot be set to [*] for credentials to be allowed, origins must be specified."  !!
+
+# As others have said REMOVE allow_methods=["*"], if the origin is a wildcard otherwise it WILL NOT WORK
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
 )
 
 if __name__ == "__main__":
