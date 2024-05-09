@@ -44,7 +44,10 @@ app.include_router(utilities_router, prefix="/utilities")
 # As others have said REMOVE allow_methods=["*"], if the origin is a wildcard otherwise it WILL NOT WORK
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins= ['http://localhost:3000', 'http://127.0.0.1:3000', "http://192.168.0.112:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 if __name__ == "__main__":
