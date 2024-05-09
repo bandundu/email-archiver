@@ -37,14 +37,18 @@ app.include_router(exports_router, prefix="/exports")
 app.include_router(utilities_router, prefix="/utilities")
 
 
-# Set up CORS middleware to allow requests from any origin
+origins = [
+    "http://localhost:3000",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 if __name__ == "__main__":
 
