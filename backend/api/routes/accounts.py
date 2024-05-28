@@ -11,6 +11,7 @@ import services.queue_service as queue_service
 router = APIRouter()
 
 
+
 @router.post("/get_available_inboxes")
 def get_available_inboxes_route(account_data: AccountData):
     
